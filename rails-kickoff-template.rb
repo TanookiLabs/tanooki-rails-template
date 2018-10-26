@@ -22,6 +22,8 @@ def run_template!
   setup_haml
   setup_sentry
   setup_bullet
+
+  setup_javascript
   
   setup_readme
 end
@@ -82,6 +84,14 @@ def setup_bullet
   end
   git add: "."
   git commit: %Q{ -m 'Configure Bullet' }
+end
+
+def setup_javascript
+  uncomment_lines "bin/setup", "system('bin/yarn')"
+  uncomment_lines "bin/update", "system('bin/yarn')"
+
+  git add: "."
+  git commit: %Q{ -m 'Configure Javascript' }
 end
 
 def setup_sentry
