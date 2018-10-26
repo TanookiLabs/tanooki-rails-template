@@ -2,6 +2,7 @@
 
 RAILS_REQUIREMENT = ">= 5.2.1"
 RUBY_REQUIREMENT = ">= 2.5.2"
+$using_sidekiq = false
 
 def run_template!
   assert_minimum_rails_and_ruby_version!
@@ -14,6 +15,8 @@ def run_template!
     git commit: %Q{ -m 'Commit after bundle' }
     run "bin/spring stop"
   end
+
+  setup_sidekiq
 
   add_gems
   main_config_files
@@ -104,12 +107,11 @@ def output_final_instructions
     2) Configure Sentry
     3) Add the jemalloc buildpack:
       $ heroku buildpacks:add --index 1 https://github.com/mojodna/heroku-buildpack-jemalloc.git
-
+    4) Setup Redis (if using Sidekiq)
     MSG
 
     say msg, :magenta
   end
-
 end
 
 def setup_javascript
@@ -120,16 +122,39 @@ def setup_javascript
   git commit: %Q{ -m 'Configure Javascript' }
 end
 
+def setup_sidekiq
+  $using_sidekiq = ask("Do you want to setup Sidekiq?", :limited_to => ["y", "n"])
+
+  return unless $using_sidekiq
+
+  gem "sidekiq"
+
+  after_bundle do
+    insert_into_file "config/application.rb",
+      "    config.active_job.queue_adapter = :sidekiq\n\n",
+      after: "class Application < Rails::Application\n"
+
+    append_file "Procfile", "worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} jemalloc.sh bundle exec sidekiq -t 25\n"
+
+    git add: "."
+    git commit: %Q{ -m 'Setup Sidekiq' }
+  end
+end
+
 def create_database
-  bundle_command "exec rails db:create db:migrate"
-  git add: "."
-  git commit: %Q{ -m 'Create and migrate database' }
+  after_bundle do
+    bundle_command "exec rails db:create db:migrate"
+    git add: "."
+    git commit: %Q{ -m 'Create and migrate database' }
+  end
 end
 
 def fix_bundler_binstub
-  run "bundle binstubs bundler --force"
-  git add: "."
-  git commit: %Q{ -m "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193" }
+  after_bundle do
+    run "bundle binstubs bundler --force"
+    git add: "."
+    git commit: %Q{ -m "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193" }
+  end
 end
 
 def setup_sentry
@@ -169,6 +194,7 @@ def setup_readme
     - Postgresql
     - [Skylight](https://www.skylight.io/) (performance monitoring)
     - Sentry (exception reporting)
+    #{ "- Redis (required for Sidekiq)" if $using_sidekiq }
 
     ### Local Setup Guide
 
@@ -199,7 +225,15 @@ def setup_readme
     ```
 
     ### Deployment Information
+    
+    #{ $using_sidekiq && <<~SIDEKIQ
+      ### Sidekiq
 
+      This project uses Sidekiq to run background jobs and ActiveJob is configured to use Sidekiq. It is recommended to use ActiveJob to create jobs for simplicity, unless the performance overhead of ActiveJob is an issue.
+
+      Remember to follow the [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), especially making jobs idempotent and transactional. If you are using ActiveJob, the first best practice is _less_ relevant because of Rails GlobalID.
+    SIDEKIQ
+    }
     ### Coding Style / Organization
 
     ### Important rake tasks
@@ -207,6 +241,11 @@ def setup_readme
     ### Scheduled tasks
 
     ### Important ENV variables
+
+    Configuring Puma and Sidekiq:
+    `WEB_CONCURRENCY` - Number of Puma workers
+    `RAILS_MAX_THREADS` - Number of threads per Puma worker
+    #{ "`SIDEKIQ_CONCURRENCY` - Number of Sidekiq workers" if $using_sidekiq }
     
     `rack-timeout` ENV variables and defaults
     service_timeout:   15     # RACK_TIMEOUT_SERVICE_TIMEOUT
@@ -225,7 +264,7 @@ end
 
 def setup_testing
   after_bundle do
-    run "bundle exec rails generate rspec:install"
+    bundle_command "exec rails generate rspec:install"
     run "bundle binstubs rspec-core"
     git add: "."
     git commit: %Q{ -m 'RSpec install' }
@@ -291,7 +330,7 @@ def main_config_files
   uncomment_lines "config/puma.rb", "workers ENV.fetch"
   uncomment_lines "config/puma.rb", /preload_app!$/
 
-  create_file "Procfile", "web: jemalloc.sh bundle exec puma -C config/puma.rb"
+  create_file "Procfile", "web: jemalloc.sh bundle exec puma -C config/puma.rb\n"
 
   create_file ".editorconfig", <<~CONFIG
     # This file is for unifying the coding style for different editors and IDEs
