@@ -27,6 +27,8 @@ def run_template!
   
   setup_readme
   create_database
+
+  fix_bundler_binstub
 end
 
 def add_gems
@@ -99,6 +101,12 @@ def create_database
   bundle_command "exec rails db:create db:migrate"
   git add: "."
   git commit: %Q{ -m 'Create and migrate database' }
+end
+
+def fix_bundler_binstub
+  run "bundle binstubs bundler --force"
+  git add: "."
+  git commit: %Q{ -m "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193" }
 end
 
 def setup_sentry
