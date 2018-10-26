@@ -26,6 +26,7 @@ def run_template!
   setup_javascript
   
   setup_readme
+  create_database
 end
 
 def add_gems
@@ -92,6 +93,12 @@ def setup_javascript
 
   git add: "."
   git commit: %Q{ -m 'Configure Javascript' }
+end
+
+def create_database
+  bundle_command "exec rails db:create db:migrate"
+  git add: "."
+  git commit: %Q{ -m 'Create and migrate database' }
 end
 
 def setup_sentry
