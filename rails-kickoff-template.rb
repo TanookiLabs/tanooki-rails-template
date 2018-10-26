@@ -2,6 +2,7 @@
 
 RAILS_REQUIREMENT = ">= 5.2.1"
 RUBY_REQUIREMENT = ">= 2.5.2"
+$using_sidekiq = false
 
 def run_template!
   assert_minimum_rails_and_ruby_version!
@@ -15,6 +16,8 @@ def run_template!
     run "bin/spring stop"
   end
 
+  setup_sidekiq
+
   add_gems
   main_config_files
 
@@ -22,8 +25,15 @@ def run_template!
   setup_haml
   setup_sentry
   setup_bullet
+
+  setup_javascript
   
   setup_readme
+  create_database
+
+  fix_bundler_binstub
+
+  output_final_instructions
 end
 
 def add_gems
@@ -47,8 +57,8 @@ def add_gems
   end
 
   gem_group :test do
+    gem "capybara"
     gem "capybara-selenium"
-    gem "chromedriver-helper"
   end
 
   git add: "."
@@ -82,6 +92,69 @@ def setup_bullet
   end
   git add: "."
   git commit: %Q{ -m 'Configure Bullet' }
+end
+
+def output_final_instructions
+  after_bundle do
+    msg = <<~MSG
+
+    Template Completed!
+
+    Please review the above output for issues.
+    
+    To finish setup, you must prepare Heroku with the following steps:
+    1) Setup the Skylight ENV variable
+    2) Configure Sentry
+    3) Add the jemalloc buildpack:
+      $ heroku buildpacks:add --index 1 https://github.com/mojodna/heroku-buildpack-jemalloc.git
+    4) Setup Redis (if using Sidekiq)
+    MSG
+
+    say msg, :magenta
+  end
+end
+
+def setup_javascript
+  uncomment_lines "bin/setup", "system('bin/yarn')"
+  uncomment_lines "bin/update", "system('bin/yarn')"
+
+  git add: "."
+  git commit: %Q{ -m 'Configure Javascript' }
+end
+
+def setup_sidekiq
+  $using_sidekiq = ask("Do you want to setup Sidekiq?", :limited_to => ["y", "n"])
+
+  return unless $using_sidekiq
+
+  gem "sidekiq"
+
+  after_bundle do
+    insert_into_file "config/application.rb",
+      "    config.active_job.queue_adapter = :sidekiq\n\n",
+      after: "class Application < Rails::Application\n"
+
+    append_file "Procfile", "worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} jemalloc.sh bundle exec sidekiq -t 25\n"
+
+    git add: "."
+    git commit: %Q{ -m 'Setup Sidekiq' }
+  end
+end
+
+def create_database
+  after_bundle do
+    bundle_command "exec rails db:create db:migrate"
+    git add: "."
+    git commit: %Q{ -m 'Create and migrate database' }
+  end
+end
+
+def fix_bundler_binstub
+  after_bundle do
+    run "bundle binstubs bundler --force"
+    git add: "."
+    git commit: %Q{ -m "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193" }
+  end
 end
 
 def setup_sentry
@@ -121,15 +194,46 @@ def setup_readme
     - Postgresql
     - [Skylight](https://www.skylight.io/) (performance monitoring)
     - Sentry (exception reporting)
+    #{ "- Redis (required for Sidekiq)" if $using_sidekiq }
 
     ### Local Setup Guide
 
     Important note: Please setup your local code editor with [EditorConfig](https://editorconfig.org/) for code normalization
 
+    To setup the project for your local environment, please run the included script:
+
+    ```bash
+    $ bin/setup
+    ```
+
     ### Running Tests
+    
+    This project uses RSpec for testing. To run tests:
+
+    ```bash
+    $ bin/rspec spec
+    ```
+
+    For javascript integration testing, we use Google Chromedriver. You may need to `brew install chromedriver` to get this working!
+
+    ### Heroku configuration
+
+    This project is served from Heroku. It uses jemalloc to more efficiently allocate memory. You must run the following to setup jemalloc:
+
+    ```bash
+    heroku buildpacks:add --index 1 https://github.com/mojodna/heroku-buildpack-jemalloc.git
+    ```
 
     ### Deployment Information
+    
+    #{ $using_sidekiq && <<~SIDEKIQ
+      ### Sidekiq
 
+      This project uses Sidekiq to run background jobs and ActiveJob is configured to use Sidekiq. It is recommended to use ActiveJob to create jobs for simplicity, unless the performance overhead of ActiveJob is an issue.
+
+      Remember to follow the [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), especially making jobs idempotent and transactional. If you are using ActiveJob, the first best practice is _less_ relevant because of Rails GlobalID.
+    SIDEKIQ
+    }
     ### Coding Style / Organization
 
     ### Important rake tasks
@@ -137,6 +241,11 @@ def setup_readme
     ### Scheduled tasks
 
     ### Important ENV variables
+
+    Configuring Puma and Sidekiq:
+    `WEB_CONCURRENCY` - Number of Puma workers
+    `RAILS_MAX_THREADS` - Number of threads per Puma worker
+    #{ "`SIDEKIQ_CONCURRENCY` - Number of Sidekiq workers" if $using_sidekiq }
     
     `rack-timeout` ENV variables and defaults
     service_timeout:   15     # RACK_TIMEOUT_SERVICE_TIMEOUT
@@ -155,8 +264,7 @@ end
 
 def setup_testing
   after_bundle do
-    remove_dir 'test' # Using rspec, we don't need this
-    run "bundle exec rails generate rspec:install"
+    bundle_command "exec rails generate rspec:install"
     run "bundle binstubs rspec-core"
     git add: "."
     git commit: %Q{ -m 'RSpec install' }
@@ -191,9 +299,18 @@ def setup_testing
       end
     RB
 
+    gsub_file "spec/spec_helper.rb", "=begin\n", ""
+    gsub_file "spec/spec_helper.rb", "=end\n", ""
+
+    comment_lines "spec/rails_helper.rb", "config.fixture_path ="
+
     insert_into_file "spec/rails_helper.rb",
-      "  config.include FactoryBot::Syntax::Methods\n",
+      "  config.include FactoryBot::Syntax::Methods\n\n",
       after: "RSpec.configure do |config|\n"
+
+    insert_into_file "spec/rails_helper.rb",
+      "require 'capybara/rails'\n",
+      after: "Add additional requires below this line. Rails is not loaded until this point!\n"
 
     git add: "."
     git commit: %Q{ -m 'Finish setting up testing' }
@@ -213,7 +330,7 @@ def main_config_files
   uncomment_lines "config/puma.rb", "workers ENV.fetch"
   uncomment_lines "config/puma.rb", /preload_app!$/
 
-  create_file "Procfile", "web: bundle exec puma -C config/puma.rb"
+  create_file "Procfile", "web: jemalloc.sh bundle exec puma -C config/puma.rb\n"
 
   create_file ".editorconfig", <<~CONFIG
     # This file is for unifying the coding style for different editors and IDEs
@@ -231,6 +348,8 @@ def main_config_files
   CONFIG
 
   append_file ".gitignore", <<~GITIGNORE
+
+    spec/examples.txt
   
     # TODO Comment out this rule if environment variables can be committed
     .env
