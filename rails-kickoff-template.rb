@@ -167,6 +167,14 @@ def setup_readme
 
     For javascript integration testing, we use Google Chromedriver. You may need to `brew install chromedriver` to get this working!
 
+    ### Heroku configuration
+
+    This project is served from Heroku. It uses jemalloc to more efficiently allocate memory. You must run the following to setup jemalloc:
+
+    ```bash
+    heroku buildpacks:add --index 1 https://github.com/mojodna/heroku-buildpack-jemalloc.git
+    ```
+
     ### Deployment Information
 
     ### Coding Style / Organization
