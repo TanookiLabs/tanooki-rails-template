@@ -165,6 +165,8 @@ def setup_readme
     $ bin/rspec spec
     ```
 
+    For javascript integration testing, we use Google Chromedriver. You may need to `brew install chromedriver` to get this working!
+
     ### Deployment Information
 
     ### Coding Style / Organization
