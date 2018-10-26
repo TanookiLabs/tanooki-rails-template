@@ -52,8 +52,8 @@ def add_gems
   end
 
   gem_group :test do
+    gem "capybara"
     gem "capybara-selenium"
-    gem "chromedriver-helper"
   end
 
   git add: "."
@@ -151,7 +151,19 @@ def setup_readme
 
     Important note: Please setup your local code editor with [EditorConfig](https://editorconfig.org/) for code normalization
 
+    To setup the project for your local environment, please run the included script:
+
+    ```bash
+    $ bin/setup
+    ```
+
     ### Running Tests
+    
+    This project uses RSpec for testing. To run tests:
+
+    ```bash
+    $ bin/rspec spec
+    ```
 
     ### Deployment Information
 
@@ -180,7 +192,6 @@ end
 
 def setup_testing
   after_bundle do
-    remove_dir 'test' # Using rspec, we don't need this
     run "bundle exec rails generate rspec:install"
     run "bundle binstubs rspec-core"
     git add: "."
@@ -216,9 +227,18 @@ def setup_testing
       end
     RB
 
+    gsub_file "spec/spec_helper.rb", "=begin\n", ""
+    gsub_file "spec/spec_helper.rb", "=end\n", ""
+
+    comment_lines "spec/rails_helper.rb", "config.fixture_path ="
+
     insert_into_file "spec/rails_helper.rb",
-      "  config.include FactoryBot::Syntax::Methods\n",
+      "  config.include FactoryBot::Syntax::Methods\n\n",
       after: "RSpec.configure do |config|\n"
+
+    insert_into_file "spec/rails_helper.rb",
+      "require 'capybara/rails'\n",
+      after: "Add additional requires below this line. Rails is not loaded until this point!\n"
 
     git add: "."
     git commit: %Q{ -m 'Finish setting up testing' }
@@ -256,6 +276,8 @@ def main_config_files
   CONFIG
 
   append_file ".gitignore", <<~GITIGNORE
+
+    spec/examples.txt
   
     # TODO Comment out this rule if environment variables can be committed
     .env
