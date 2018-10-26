@@ -29,6 +29,8 @@ def run_template!
   create_database
 
   fix_bundler_binstub
+
+  output_final_instructions
 end
 
 def add_gems
@@ -87,6 +89,27 @@ def setup_bullet
   end
   git add: "."
   git commit: %Q{ -m 'Configure Bullet' }
+end
+
+def output_final_instructions
+  after_bundle do
+    msg = <<~MSG
+
+    Template Completed!
+
+    Please review the above output for issues.
+    
+    To finish setup, you must prepare Heroku with the following steps:
+    1) Setup the Skylight ENV variable
+    2) Configure Sentry
+    3) Add the jemalloc buildpack:
+      $ heroku buildpacks:add --index 1 https://github.com/mojodna/heroku-buildpack-jemalloc.git
+
+    MSG
+
+    say msg, :magenta
+  end
+
 end
 
 def setup_javascript
