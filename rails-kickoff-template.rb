@@ -258,7 +258,7 @@ def main_config_files
   uncomment_lines "config/puma.rb", "workers ENV.fetch"
   uncomment_lines "config/puma.rb", /preload_app!$/
 
-  create_file "Procfile", "web: bundle exec puma -C config/puma.rb"
+  create_file "Procfile", "web: jemalloc.sh bundle exec puma -C config/puma.rb"
 
   create_file ".editorconfig", <<~CONFIG
     # This file is for unifying the coding style for different editors and IDEs
