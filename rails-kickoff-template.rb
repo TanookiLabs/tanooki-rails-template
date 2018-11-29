@@ -123,7 +123,7 @@ def setup_javascript
 end
 
 def setup_sidekiq
-  $using_sidekiq = ask("Do you want to setup Sidekiq?", :limited_to => ["y", "n"])
+  $using_sidekiq = (ask("Do you want to setup Sidekiq?", :limited_to => ["y", "n"]) == 'y')
 
   return unless $using_sidekiq
 
