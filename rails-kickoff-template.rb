@@ -4,15 +4,22 @@ RAILS_REQUIREMENT = ">= 5.2.1"
 RUBY_REQUIREMENT = ">= 2.5.2"
 $using_sidekiq = false
 
+def git_proxy(**args)
+  if $use_git
+    git args
+  end
+end
+
 def run_template!
   assert_minimum_rails_and_ruby_version!
+  $use_git = yes?("Do you want to add git commits (recommended)")
 
-  git add: "."
-  git commit: %Q{ -m 'Initial commit' }
+  git_proxy add: "."
+  git_proxy commit: %Q{ -m 'Initial commit' }
 
   after_bundle do
-    git add: "."
-    git commit: %Q{ -m 'Commit after bundle' }
+    git_proxy add: "."
+    git_proxy commit: %Q{ -m 'Commit after bundle' }
     run "bin/spring stop"
   end
 
@@ -61,14 +68,14 @@ def add_gems
     gem "capybara-selenium"
   end
 
-  git add: "."
-  git commit: %Q{ -m 'Add custom gems' }
+  git_proxy add: "."
+  git_proxy commit: %Q{ -m 'Add custom gems' }
 end
 
 def setup_haml
   run "yes | HAML_RAILS_DELETE_ERB=true rake haml:erb2haml"
-  git add: "."
-  git commit: %Q{ -m 'Use Haml' }
+  git_proxy add: "."
+  git_proxy commit: %Q{ -m 'Use Haml' }
 end
 
 def setup_bullet
@@ -90,8 +97,8 @@ def setup_bullet
   end
   RB
   end
-  git add: "."
-  git commit: %Q{ -m 'Configure Bullet' }
+  git_proxy add: "."
+  git_proxy commit: %Q{ -m 'Configure Bullet' }
 end
 
 def output_final_instructions
@@ -115,15 +122,15 @@ def output_final_instructions
 end
 
 def setup_javascript
-  uncomment_lines "bin/setup", "system('bin/yarn')"
-  uncomment_lines "bin/update", "system('bin/yarn')"
+  uncomment_lines "bin/setup", "bin/yarn"
+  uncomment_lines "bin/update", "bin/yarn"
 
-  git add: "."
-  git commit: %Q{ -m 'Configure Javascript' }
+  git_proxy add: "."
+  git_proxy commit: %Q{ -m 'Configure Javascript' }
 end
 
 def setup_sidekiq
-  $using_sidekiq = (ask("Do you want to setup Sidekiq?", :limited_to => ["y", "n"]) == 'y')
+  $using_sidekiq = yes?("Do you want to setup Sidekiq?")
 
   return unless $using_sidekiq
 
@@ -136,24 +143,24 @@ def setup_sidekiq
 
     append_file "Procfile", "worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} jemalloc.sh bundle exec sidekiq -t 25\n"
 
-    git add: "."
-    git commit: %Q{ -m 'Setup Sidekiq' }
+    git_proxy add: "."
+    git_proxy commit: %Q{ -m 'Setup Sidekiq' }
   end
 end
 
 def create_database
   after_bundle do
     bundle_command "exec rails db:create db:migrate"
-    git add: "."
-    git commit: %Q{ -m 'Create and migrate database' }
+    git_proxy add: "."
+    git_proxy commit: %Q{ -m 'Create and migrate database' }
   end
 end
 
 def fix_bundler_binstub
   after_bundle do
     run "bundle binstubs bundler --force"
-    git add: "."
-    git commit: %Q{ -m "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193" }
+    git_proxy add: "."
+    git_proxy commit: %Q{ -m "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193" }
   end
 end
 
@@ -177,7 +184,7 @@ def setup_sentry
 
   def set_raven_context
     # Uncomment when user is setup:
-    # Raven.user_context(id: current_user.id)
+    # Raven.user_context(id: current_user.id) if current_user
     Raven.extra_context(params: params.to_unsafe_h, url: request.url)
   end
   RB
@@ -226,7 +233,7 @@ def setup_readme
 
     ### Deployment Information
     
-    #{ $using_sidekiq && <<~SIDEKIQ
+    #{ !$using_sidekiq ? '' : <<~SIDEKIQ
       ### Sidekiq
 
       This project uses Sidekiq to run background jobs and ActiveJob is configured to use Sidekiq. It is recommended to use ActiveJob to create jobs for simplicity, unless the performance overhead of ActiveJob is an issue.
@@ -258,16 +265,16 @@ def setup_readme
   MARKDOWN
   end
 
-  git add: "."
-  git commit: %Q{ -m 'Add README' }
+  git_proxy add: "."
+  git_proxy commit: %Q{ -m 'Add README' }
 end
 
 def setup_testing
   after_bundle do
     bundle_command "exec rails generate rspec:install"
     run "bundle binstubs rspec-core"
-    git add: "."
-    git commit: %Q{ -m 'RSpec install' }
+    git_proxy add: "."
+    git_proxy commit: %Q{ -m 'RSpec install' }
 
     create_file "spec/support/chromedriver.rb", <<~RB
       require "selenium/webdriver"
@@ -299,6 +306,8 @@ def setup_testing
       end
     RB
 
+    uncomment_lines "spec/rails_helper.rb", /Dir\[Rails\.root\.join/
+
     gsub_file "spec/spec_helper.rb", "=begin\n", ""
     gsub_file "spec/spec_helper.rb", "=end\n", ""
 
@@ -312,8 +321,8 @@ def setup_testing
       "require 'capybara/rails'\n",
       after: "Add additional requires below this line. Rails is not loaded until this point!\n"
 
-    git add: "."
-    git commit: %Q{ -m 'Finish setting up testing' }
+    git_proxy add: "."
+    git_proxy commit: %Q{ -m 'Finish setting up testing' }
   end
 end
 
@@ -358,8 +367,8 @@ def main_config_files
     .env.test.local
   GITIGNORE
 
-  git add: "."
-  git commit: %Q{ -m 'Setup config files' }
+  git_proxy add: "."
+  git_proxy commit: %Q{ -m 'Setup config files' }
 end
 
 def assert_minimum_rails_and_ruby_version!
@@ -381,4 +390,6 @@ def assert_minimum_rails_and_ruby_version!
 end
 
 run_template!
-
+if yes?('Are you running this to update an existing application (usually no)')
+  run_after_bundle_callbacks
+end
