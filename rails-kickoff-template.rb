@@ -73,9 +73,11 @@ def add_gems
 end
 
 def setup_haml
-  run "yes | HAML_RAILS_DELETE_ERB=true rake haml:erb2haml"
-  git_proxy add: "."
-  git_proxy commit: %Q{ -m 'Use Haml' }
+  after_bundle do
+    run "yes | HAML_RAILS_DELETE_ERB=true rake haml:erb2haml"
+    git_proxy add: "."
+    git_proxy commit: %Q{ -m 'Use Haml' }
+  end
 end
 
 def setup_bullet
@@ -189,6 +191,9 @@ def setup_sentry
   end
   RB
   end
+
+  git_proxy add: "."
+  git_proxy commit: %Q{ -m 'Setup Sentry' }
 end
 
 def setup_readme
