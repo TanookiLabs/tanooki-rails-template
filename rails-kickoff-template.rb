@@ -395,6 +395,6 @@ def assert_minimum_rails_and_ruby_version!
 end
 
 run_template!
-if yes?('Are you running this to update an existing application (usually no)')
+if yes?('Is this template being run on an existing application? (usually no)')
   run_after_bundle_callbacks
 end
