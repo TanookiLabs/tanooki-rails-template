@@ -111,11 +111,11 @@ def output_final_instructions
 
     Please review the above output for issues.
     
-    To finish setup, you must prepare Heroku with the following steps:
+    To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
     1) Setup the Skylight ENV variable
     2) Configure Sentry
     3) Add the jemalloc buildpack:
-      $ heroku buildpacks:add --index 1 https://github.com/mojodna/heroku-buildpack-jemalloc.git
+      $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
     4) Setup Redis (if using Sidekiq)
     MSG
 
