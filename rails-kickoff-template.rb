@@ -24,6 +24,7 @@ def run_template!
   end
 
   setup_sidekiq
+  setup_email
 
   add_gems
   main_config_files
@@ -148,6 +149,10 @@ def setup_sidekiq
     git_proxy add: "."
     git_proxy commit: %Q{ -m 'Setup Sidekiq' }
   end
+end
+
+def setup_email
+  gem 'mta-settings'
 end
 
 def create_database
