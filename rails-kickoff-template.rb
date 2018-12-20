@@ -1,25 +1,29 @@
-# Tanooki rails-kickoff-template.rb
+# frozen_string_literal: true
+
+# Tanooki Rails Kickoff Template
 
 RAILS_REQUIREMENT = ">= 5.2.1"
 RUBY_REQUIREMENT = ">= 2.5.2"
+REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
 $using_sidekiq = false
 
 def git_proxy(**args)
-  if $use_git
-    git args
-  end
+  git args if $use_git
+end
+
+def git_proxy_commit(msg)
+  git_proxy add: "."
+  git_proxy commit: %( -m "#{msg}" )
 end
 
 def run_template!
   assert_minimum_rails_and_ruby_version!
   $use_git = yes?("Do you want to add git commits (recommended)")
 
-  git_proxy add: "."
-  git_proxy commit: %Q{ -m 'Initial commit' }
+  git_proxy_commit "Initial commit"
 
   after_bundle do
-    git_proxy add: "."
-    git_proxy commit: %Q{ -m 'Commit after bundle' }
+    git_proxy_commit "Commit after bundle"
     run "bin/spring stop"
   end
 
@@ -33,9 +37,10 @@ def run_template!
   setup_haml
   setup_sentry
   setup_bullet
+  setup_linters
 
   setup_javascript
-  
+
   setup_readme
   create_database
 
@@ -61,7 +66,7 @@ def add_gems
   end
 
   gem_group :development do
-    gem 'bullet'
+    gem "bullet"
   end
 
   gem_group :test do
@@ -69,21 +74,19 @@ def add_gems
     gem "capybara-selenium"
   end
 
-  git_proxy add: "."
-  git_proxy commit: %Q{ -m 'Add custom gems' }
+  git_proxy_commit "Add custom gems"
 end
 
 def setup_haml
   after_bundle do
     run "yes | HAML_RAILS_DELETE_ERB=true rake haml:erb2haml"
-    git_proxy add: "."
-    git_proxy commit: %Q{ -m 'Use Haml' }
+    git_proxy_commit "Use Haml"
   end
 end
 
 def setup_bullet
-  inject_into_file 'config/environments/development.rb', before: /^end\n/ do <<-RB
-
+  inject_into_file "config/environments/development.rb", before: /^end\n/ do
+    <<-RB
   config.after_initialize do
     Bullet.enable = true
     # Bullet.sentry = true
@@ -93,31 +96,37 @@ def setup_bullet
     # Bullet.growl = true
     Bullet.rails_logger = true
     # Bullet.add_footer = true
-    # Bullet.stacktrace_includes = [ 'your_gem', 'your_middleware' ]
-    # Bullet.stacktrace_excludes = [ 'their_gem', 'their_middleware', ['my_file.rb', 'my_method'], ['my_file.rb', 16..20] ]
-    # Bullet.slack = { webhook_url: 'http://some.slack.url', channel: '#default', username: 'notifier' }
+    # Bullet.stacktrace_includes = [ "your_gem", "your_middleware" ]
+    # Bullet.stacktrace_excludes = [
+    #   "their_gem", "their_middleware", ["my_file.rb", "my_method"], ["my_file.rb", 16..20
+    # ]
+    # Bullet.slack = {
+    #   webhook_url: "http://some.slack.url",
+    #   channel: "#default",
+    #   username: "notifier"
+    #  }
     # Bullet.raise = true
   end
-  RB
+    RB
   end
-  git_proxy add: "."
-  git_proxy commit: %Q{ -m 'Configure Bullet' }
+  git_proxy_commit "Configure Bullet"
 end
 
 def output_final_instructions
   after_bundle do
     msg = <<~MSG
+      Template Completed!
 
-    Template Completed!
+      Please review the above output for issues.
 
-    Please review the above output for issues.
-    
-    To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
-    1) Setup the Skylight ENV variable
-    2) Configure Sentry
-    3) Add the jemalloc buildpack:
-      $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
-    4) Setup Redis (if using Sidekiq)
+      To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
+      1) Setup the Skylight ENV variable
+      2) Configure Sentry
+      3) Add the jemalloc buildpack:
+        $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
+      4) Setup Redis (if using Sidekiq)
+      5) Review your README.md file for needed updates
+      6) Review your Gemfile for formatting
     MSG
 
     say msg, :magenta
@@ -128,8 +137,7 @@ def setup_javascript
   uncomment_lines "bin/setup", "bin/yarn"
   uncomment_lines "bin/update", "bin/yarn"
 
-  git_proxy add: "."
-  git_proxy commit: %Q{ -m 'Configure Javascript' }
+  git_proxy_commit "Configure Javascript"
 end
 
 def setup_sidekiq
@@ -144,10 +152,57 @@ def setup_sidekiq
       "    config.active_job.queue_adapter = :sidekiq\n\n",
       after: "class Application < Rails::Application\n"
 
-    append_file "Procfile", "worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} jemalloc.sh bundle exec sidekiq -t 25\n"
+    append_file "Procfile",
+      "worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} jemalloc.sh bundle exec sidekiq -t 25\n"
 
-    git_proxy add: "."
-    git_proxy commit: %Q{ -m 'Setup Sidekiq' }
+    git_proxy_commit "Setup Sidekiq"
+  end
+end
+
+def setup_linters
+  gem "rubocop", require: false
+  gem "rubocop-rspec", require: false
+  gem "rubocop-thread_safety", require: false
+  gem "overcommit"
+
+  after_bundle do
+    get "#{REPOSITORY_PATH}/.rubocop.yml", ".rubocop.yml"
+    get "#{REPOSITORY_PATH}/.eslintrc.json", ".eslintrc.json"
+
+    pkg_txt = <<-JSON
+    "scripts": {
+      "lint": "yarn run eslint --ext .js --ext .jsx app/javascript"
+    },
+    JSON
+
+    insert_into_file "package.json", pkg_txt, before: "\n  \"dependencies\": {"
+
+    create_file ".overcommit.yml" do
+      <<~OVERCOMMIT
+        PreCommit:
+          EsLint:
+            enabled: true
+            required_executable: "npm"
+            command: ["npm", "run", "lint", "-f", "compact"]
+          RuboCop:
+            enabled: true
+            command: ["bundle", "exec", "rubocop"]
+      OVERCOMMIT
+    end
+
+    run "yarn add eslint --dev"
+    run "yarn add eslint-plugin-react --dev"
+    run "yarn add babel-eslint --dev"
+
+    git_proxy_commit "Setup styleguide and linters"
+  end
+
+  after_bundle do
+    bundle_command "exec rubocop -a"
+    git_proxy_commit "Autocorrect rubocop"
+
+    bundle_command "exec overcommit --install"
+    git_proxy_commit "Install overcommit precommit hook"
   end
 end
 
@@ -158,21 +213,19 @@ end
 def create_database
   after_bundle do
     bundle_command "exec rails db:create db:migrate"
-    git_proxy add: "."
-    git_proxy commit: %Q{ -m 'Create and migrate database' }
+    git_proxy_commit "Create and migrate database"
   end
 end
 
 def fix_bundler_binstub
   after_bundle do
     run "bundle binstubs bundler --force"
-    git_proxy add: "."
-    git_proxy commit: %Q{ -m "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193" }
+    git_proxy_commit "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193"
   end
 end
 
 def setup_sentry
-  initializer 'sentry.rb', <<~RB
+  initializer "sentry.rb", <<~RB
     Raven.configure do |config|
       config.sanitize_fields = Rails.application.config.filter_parameters.map(&:to_s)
 
@@ -184,7 +237,8 @@ def setup_sentry
     end
   RB
 
-  inject_into_class "app/controllers/application_controller.rb", "ApplicationController" do <<-RB
+  inject_into_class "app/controllers/application_controller.rb", "ApplicationController" do
+    <<-RB
   before_action :set_raven_context
 
   private
@@ -194,105 +248,28 @@ def setup_sentry
     # Raven.user_context(id: current_user.id) if current_user
     Raven.extra_context(params: params.to_unsafe_h, url: request.url)
   end
-  RB
+    RB
   end
 
-  git_proxy add: "."
-  git_proxy commit: %Q{ -m 'Setup Sentry' }
+  git_proxy_commit "Setup Sentry"
 end
 
 def setup_readme
-  remove_file 'README.md'
-  create_file 'README.md' do <<~MARKDOWN
-    # PROJECT_NAME
-
-    ### Services used
-
-    - Postgresql
-    - [Skylight](https://www.skylight.io/) (performance monitoring)
-    - Sentry (exception reporting)
-    #{ "- Redis (required for Sidekiq)" if $using_sidekiq }
-
-    ### Local Setup Guide
-
-    Important note: Please setup your local code editor with [EditorConfig](https://editorconfig.org/) for code normalization
-
-    To setup the project for your local environment, please run the included script:
-
-    ```bash
-    $ bin/setup
-    ```
-
-    ### Running Tests
-    
-    This project uses RSpec for testing. To run tests:
-
-    ```bash
-    $ bin/rspec spec
-    ```
-
-    For javascript integration testing, we use Google Chromedriver. You may need to `brew install chromedriver` to get this working!
-
-    ### Heroku configuration
-
-    This project is served from Heroku. It uses jemalloc to more efficiently allocate memory. You must run the following to setup jemalloc:
-
-    ```bash
-    heroku buildpacks:add --index 1 https://github.com/mojodna/heroku-buildpack-jemalloc.git
-    ```
-
-    ### Deployment Information
-    
-    #{ !$using_sidekiq ? '' : <<~SIDEKIQ
-      ### Sidekiq
-
-      This project uses Sidekiq to run background jobs and ActiveJob is configured to use Sidekiq. It is recommended to use ActiveJob to create jobs for simplicity, unless the performance overhead of ActiveJob is an issue.
-
-      Remember to follow the [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), especially making jobs idempotent and transactional. If you are using ActiveJob, the first best practice is _less_ relevant because of Rails GlobalID.
-    SIDEKIQ
-    }
-    ### Email
-
-    This project is configured with the [mta-settings](https://github.com/tpope/mta-settings) gem for transparent configuration of e-mail based on Heroku environment variables. This supports Sendgrid, Mandrill, Postmark, Mailgun, and Mailtrap ENV variables.
-
-    Note that this means that if you do not want emails to be sent out, you should not have any of these environment variables set (except for Mailtrap).
-
-    ### Coding Style / Organization
-
-    ### Important rake tasks
-
-    ### Scheduled tasks
-
-    ### Important ENV variables
-
-    Configuring Puma and Sidekiq:
-
-    - `WEB_CONCURRENCY` - Number of Puma workers
-    - `RAILS_MAX_THREADS` - Number of threads per Puma worker
-    - #{ "`SIDEKIQ_CONCURRENCY` - Number of Sidekiq workers" if $using_sidekiq }
-    
-    `rack-timeout` ENV variables and defaults
-
-    - service_timeout:   15     # RACK_TIMEOUT_SERVICE_TIMEOUT
-    - wait_timeout:      30     # RACK_TIMEOUT_WAIT_TIMEOUT
-    - wait_overtime:     60     # RACK_TIMEOUT_WAIT_OVERTIME
-    - service_past_wait: false  # RACK_TIMEOUT_SERVICE_PAST_WAIT
-
-    Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to load `.env` files. Use `.env.development` and `.env.test` to setup *shared* ENV variables for development and test, and use `.env` files ending in `.local` for variables specific to you.
-
-  MARKDOWN
+  remove_file "README.md"
+  get "#{REPOSITORY_PATH}/templates/README.md", "README.md"
+  unless $using_sidekiq
+    gsub_file "README.md", /### Sidekiq.*###/, "###"
+    gsub_file "README.md", /^.*Sidekiq.*\n/, ""
   end
 
-  git_proxy add: "."
-  git_proxy commit: %Q{ -m 'Add README' }
+  git_proxy_commit "Add README"
 end
 
 def setup_testing
   after_bundle do
     bundle_command "exec rails generate rspec:install"
     run "bundle binstubs rspec-core"
-    git_proxy add: "."
-    git_proxy commit: %Q{ -m 'RSpec install' }
+    git_proxy_commit "RSpec install"
 
     create_file "spec/support/chromedriver.rb", <<~RB
       require "selenium/webdriver"
@@ -303,12 +280,14 @@ def setup_testing
 
       Capybara.register_driver :headless_chrome do |app|
         capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(
-          chromeOptions: { args: %w(headless disable-gpu) },
+          chromeOptions: { args: %w[headless disable-gpu] }
         )
 
-        Capybara::Selenium::Driver.new app,
+        Capybara::Selenium::Driver.new(
+          app,
           browser: :chrome,
           desired_capabilities: capabilities
+        )
       end
 
       Capybara.javascript_driver = :headless_chrome
@@ -316,7 +295,7 @@ def setup_testing
 
     create_file "spec/lint_spec.rb", <<~RB
       # consider switching to rake task in the future: https://github.com/thoughtbot/factory_bot/blob/master/GETTING_STARTED.md#linting-factories
-      require 'rails_helper'
+      require "rails_helper"
       RSpec.describe "Factories" do
         it "lints successfully" do
           FactoryBot.lint
@@ -336,22 +315,22 @@ def setup_testing
       after: "RSpec.configure do |config|\n"
 
     insert_into_file "spec/rails_helper.rb",
-      "require 'capybara/rails'\n",
+      "require \"capybara/rails\"\n",
       after: "Add additional requires below this line. Rails is not loaded until this point!\n"
 
-    git_proxy add: "."
-    git_proxy commit: %Q{ -m 'Finish setting up testing' }
+    git_proxy_commit "Finish setting up testing"
   end
 end
 
 def main_config_files
-  insert_into_file "config/database.yml", after: "default: &default\n" do <<-YML
-  reaping_frequency: <%= ENV['DB_REAP_FREQ'] || 10 %> # https://devcenter.heroku.com/articles/concurrency-and-database-connections#bad-connections
+  insert_into_file "config/database.yml", after: "default: &default\n" do
+    <<-YML
+  reaping_frequency: <%= ENV["DB_REAP_FREQ"] || 10 %> # https://devcenter.heroku.com/articles/concurrency-and-database-connections#bad-connections
   connect_timeout: 1 # raises PG::ConnectionBad
   checkout_timeout: 1 # raises ActiveRecord::ConnectionTimeoutError
   variables:
     statement_timeout: 10000 # manually override on a per-query basis
-  YML
+    YML
   end
 
   uncomment_lines "config/puma.rb", "workers ENV.fetch"
@@ -359,25 +338,12 @@ def main_config_files
 
   create_file "Procfile", "web: jemalloc.sh bundle exec puma -C config/puma.rb\nrelease: bundle exec rake db:migrate\n"
 
-  create_file ".editorconfig", <<~CONFIG
-    # This file is for unifying the coding style for different editors and IDEs
-    # editorconfig.org
-
-    root = true
-
-    [*]
-    charset = utf-8
-    trim_trailing_whitespace = true
-    insert_final_newline = true
-    indent_style = space
-    indent_size = 2
-    end_of_line = lf
-  CONFIG
+  get "#{REPOSITORY_PATH}/.editorconfig", ".editorconfig"
 
   append_file ".gitignore", <<~GITIGNORE
 
     spec/examples.txt
-  
+
     # TODO Comment out this rule if environment variables can be committed
     .env
     .env.development.local
@@ -385,8 +351,7 @@ def main_config_files
     .env.test.local
   GITIGNORE
 
-  git_proxy add: "."
-  git_proxy commit: %Q{ -m 'Setup config files' }
+  git_proxy_commit "Setup config files"
 end
 
 def assert_minimum_rails_and_ruby_version!
@@ -408,6 +373,6 @@ def assert_minimum_rails_and_ruby_version!
 end
 
 run_template!
-if yes?('Is this template being run on an existing application? (usually no)')
+if yes?("Is this template being run on an existing application? (usually no)")
   run_after_bundle_callbacks
 end
