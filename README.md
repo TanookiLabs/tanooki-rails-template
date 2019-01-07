@@ -128,6 +128,10 @@ class Application < Rails::Application
 end
 ```
 
+##### Email Setup
+
+Add the `mta-settings`
+
 ##### Testing Setup
 
 ###### Browser Testing
@@ -294,6 +298,13 @@ heroku buildpacks:add --index 1 https://github.com/gaffneyc/heroku-buildpack-jem
 This project uses Sidekiq to run background jobs and ActiveJob is configured to use Sidekiq. It is recommended to use ActiveJob to create jobs for simplicity, unless the performance overhead of ActiveJob is an issue.
 
 Remember to follow the [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), especially making jobs idempotent and transactional. If you are using ActiveJob, the first best practice is _less_ relevant because of Rails GlobalID.
+
+### Email
+
+This project is configured with the [mta-settings](https://github.com/tpope/mta-settings) gem for transparent configuration of e-mail based on Heroku environment variables. This supports Sendgrid, Mandrill, Postmark, Mailgun, and Mailtrap ENV variables.
+
+Note that this means that if you do not want emails to be sent out, you should not have any of these environment variables set (except for Mailtrap).
+
 
 ### Coding Style / Organization
 
