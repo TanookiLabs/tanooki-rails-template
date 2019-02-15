@@ -251,6 +251,12 @@ def setup_readme
       Remember to follow the [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), especially making jobs idempotent and transactional. If you are using ActiveJob, the first best practice is _less_ relevant because of Rails GlobalID.
     SIDEKIQ
     }
+    ### Email
+
+    This project is configured with the [mta-settings](https://github.com/tpope/mta-settings) gem for transparent configuration of e-mail based on Heroku environment variables. This supports Sendgrid, Mandrill, Postmark, Mailgun, and Mailtrap ENV variables.
+
+    Note that this means that if you do not want emails to be sent out, you should not have any of these environment variables set (except for Mailtrap).
+
     ### Coding Style / Organization
 
     ### Important rake tasks
@@ -260,15 +266,17 @@ def setup_readme
     ### Important ENV variables
 
     Configuring Puma and Sidekiq:
-    `WEB_CONCURRENCY` - Number of Puma workers
-    `RAILS_MAX_THREADS` - Number of threads per Puma worker
-    #{ "`SIDEKIQ_CONCURRENCY` - Number of Sidekiq workers" if $using_sidekiq }
+
+    - `WEB_CONCURRENCY` - Number of Puma workers
+    - `RAILS_MAX_THREADS` - Number of threads per Puma worker
+    - #{ "`SIDEKIQ_CONCURRENCY` - Number of Sidekiq workers" if $using_sidekiq }
     
     `rack-timeout` ENV variables and defaults
-    service_timeout:   15     # RACK_TIMEOUT_SERVICE_TIMEOUT
-    wait_timeout:      30     # RACK_TIMEOUT_WAIT_TIMEOUT
-    wait_overtime:     60     # RACK_TIMEOUT_WAIT_OVERTIME
-    service_past_wait: false  # RACK_TIMEOUT_SERVICE_PAST_WAIT
+
+    - service_timeout:   15     # RACK_TIMEOUT_SERVICE_TIMEOUT
+    - wait_timeout:      30     # RACK_TIMEOUT_WAIT_TIMEOUT
+    - wait_overtime:     60     # RACK_TIMEOUT_WAIT_OVERTIME
+    - service_past_wait: false  # RACK_TIMEOUT_SERVICE_PAST_WAIT
 
     Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to load `.env` files. Use `.env.development` and `.env.test` to setup *shared* ENV variables for development and test, and use `.env` files ending in `.local` for variables specific to you.
 
