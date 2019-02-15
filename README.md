@@ -315,15 +315,17 @@ Note that this means that if you do not want emails to be sent out, you should n
 ### Important ENV variables
 
 Configuring Puma and Sidekiq:
-`WEB_CONCURRENCY` - Number of Puma workers
-`RAILS_MAX_THREADS` - Number of threads per Puma worker
-`SIDEKIQ_CONCURRENCY` - Number of Sidekiq workers
+
+- `WEB_CONCURRENCY` - Number of Puma workers
+- `RAILS_MAX_THREADS` - Number of threads per Puma worker
+- `SIDEKIQ_CONCURRENCY` - Number of Sidekiq workers
 
 `rack-timeout` ENV variables and defaults
-service_timeout:   15     # RACK_TIMEOUT_SERVICE_TIMEOUT
-wait_timeout:      30     # RACK_TIMEOUT_WAIT_TIMEOUT
-wait_overtime:     60     # RACK_TIMEOUT_WAIT_OVERTIME
-service_past_wait: false  # RACK_TIMEOUT_SERVICE_PAST_WAIT
+
+- service_timeout:   15     # RACK_TIMEOUT_SERVICE_TIMEOUT
+- wait_timeout:      30     # RACK_TIMEOUT_WAIT_TIMEOUT
+- wait_overtime:     60     # RACK_TIMEOUT_WAIT_OVERTIME
+- service_past_wait: false  # RACK_TIMEOUT_SERVICE_PAST_WAIT
 
 Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to load `.env` files. Use `.env.development` and `.env.test` to setup *shared* ENV variables for development and test, and use `.env` files ending in `.local` for variables specific to you.
 ```
