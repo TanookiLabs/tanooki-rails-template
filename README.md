@@ -2,18 +2,28 @@
 
 This repository holds the Rails application template referred to in our [kickoff developer guide](https://github.com/TanookiLabs/developer-guides/blob/master/web/project-kickoff.md)
 
-### Reference: Step By Step Process
-
-##### Rails Application setup
+### How to use this template
 
 - [ ] Verify that you have the most recent stable Ruby version installed, and are using it
+
 - [ ] Create a directory for your rails app and move into it
 
+- [ ] Run the following commands:
+
+  (Note that you may also use `--webpack=react` or `--webpack=stimulus` during the rails new command if you already know you will be using one of these frameworks)
+
 ```bash
-gem install rails --no-ri --no-rdoc
+gem install rails --no-document
 gem update bundler
-rails new . -T --skip-coffee --webpack --database=postgresql
+rails new . -T --skip-coffee --webpack --database=postgresql -m https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master/rails-kickoff-template.rb
 ```
+
+- [ ] Clean up your Gemfile
+- [ ] Refer back to the kickoff guide and make sure you've followed the Heroku Checklist and the Semaphore Checklist
+
+### Reference: Step By Step Process
+
+This section explains the changes made by the template
 
 ##### Rails Setup of RSpec
 
