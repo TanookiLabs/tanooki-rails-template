@@ -8,14 +8,19 @@ This repository holds the Rails application template referred to in our [kickoff
 
 - [ ] Create a directory for your rails app and move into it
 
+- [ ] Copy the `Gemfile` in this template project to your rails app directory
+
 - [ ] Run the following commands:
 
   (Note that you may also use `--webpack=react` or `--webpack=stimulus` during the rails new command if you already know you will be using one of these frameworks)
 
 ```bash
 gem install rails --no-document
+
 gem update bundler
+
 rails new . -T --skip-coffee --webpack --database=postgresql -m https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master/rails-kickoff-template.rb
+# When prompted to `overwrite Gemfile ?`, press 'Y' and continue
 ```
 
 - [ ] Clean up your Gemfile
