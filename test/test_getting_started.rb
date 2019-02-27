@@ -2,8 +2,6 @@ require "test/unit"
 
 class TestGettingStarted < Test::Unit::TestCase
   def setup
-    puts "!!setup!!"
-    puts
     puts "installing rails"
     a = `gem install rails --no-document`
     puts "which: #{`which rails`}"
