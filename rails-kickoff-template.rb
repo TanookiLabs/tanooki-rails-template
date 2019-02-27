@@ -47,6 +47,8 @@ def run_template!
 
   fix_bundler_binstub
 
+  setup_webpacker
+
   output_final_instructions
 
   exit
@@ -398,6 +400,13 @@ def setup_generators
   EOF
 
   git_proxy_commit "Configured generators (UUIDs, less files)"
+end
+
+def setup_webpacker
+  if yes?("Setup webpacker? (skip this if you removed --webpack)")
+    bundle_command "exec rails webpacker:install"
+    git_proxy_commit "Initialized webpacker"
+  end
 end
 
 run_template!
