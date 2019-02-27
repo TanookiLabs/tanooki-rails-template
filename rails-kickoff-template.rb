@@ -40,6 +40,7 @@ def run_template!
   setup_linters
 
   setup_javascript
+  setup_generators
 
   setup_readme
   create_database
@@ -47,6 +48,8 @@ def run_template!
   fix_bundler_binstub
 
   output_final_instructions
+
+  exit
 end
 
 def add_gems
@@ -113,24 +116,22 @@ def setup_bullet
 end
 
 def output_final_instructions
-  after_bundle do
-    msg = <<~MSG
-      Template Completed!
+  msg = <<~MSG
+    Template Completed!
 
-      Please review the above output for issues.
+    Please review the above output for issues.
 
-      To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
-      1) Setup the Skylight ENV variable
-      2) Configure Sentry
-      3) Add the jemalloc buildpack:
-        $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
-      4) Setup Redis (if using Sidekiq)
-      5) Review your README.md file for needed updates
-      6) Review your Gemfile for formatting
-    MSG
+    To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
+    1) Setup the Skylight ENV variable
+    2) Configure Sentry
+    3) Add the jemalloc buildpack:
+      $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
+    4) Setup Redis (if using Sidekiq)
+    5) Review your README.md file for needed updates
+    6) Review your Gemfile for formatting
+  MSG
 
-    say msg, :magenta
-  end
+  say msg, :magenta
 end
 
 def setup_javascript
@@ -370,6 +371,33 @@ def assert_minimum_rails_and_ruby_version!
   prompt = "This template requires Ruby #{RUBY_REQUIREMENT}. "\
            "You are using #{ruby_version}. Continue anyway?"
   exit 1 if no?(prompt)
+end
+
+def setup_generators
+  initializer "generators.rb", <<~EOF
+    Rails.application.config.generators do |g|
+      # use UUIDs by default
+      g.orm :active_record, primary_key_type: :uuid
+
+      # limit default generation
+      g.test_framework(
+        :rspec,
+        fixtures: true,
+        view_specs: false,
+        controller_specs: false,
+        routing_specs: false,
+        request_specs: false,
+      )
+
+      # prevent generating js/css/helper files
+      g.assets false
+      g.helper false
+
+      g.fixture_replacement :factory_bot, dir: "spec/factories"
+    end
+  EOF
+
+  git_proxy_commit "Configured generators (UUIDs, less files)"
 end
 
 run_template!
