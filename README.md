@@ -1,3 +1,5 @@
+[![Build Status](https://semaphoreci.com/api/v1/tanookilabs/tanooki-rails-template/branches/add-tests/badge.svg)](https://semaphoreci.com/tanookilabs/tanooki-rails-template)
+
 # Tanooki Rails Template
 
 This repository holds the Rails application template referred to in our [kickoff developer guide](https://github.com/TanookiLabs/developer-guides/blob/master/web/project-kickoff.md)
