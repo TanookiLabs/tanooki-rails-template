@@ -1,4 +1,5 @@
 require "test/unit"
+require 'open3'
 
 class TestGettingStarted < Test::Unit::TestCase
   def setup
@@ -9,10 +10,10 @@ class TestGettingStarted < Test::Unit::TestCase
   end
 
   def test_build_succeeds
-    assert(system("rm -rf tmp; mkdir -p tmp"), "tmp dir is replaced")
-
     Dir.chdir("tmp") {
-      cmd = "yes | YES_ALL=1 rails new Foobar -T --skip-coffee --webpack --database=postgresql -m '../rails-kickoff-template.rb'"
+      assert(system("rm -rf ./Foobar"), "existing rails app is removed")
+
+      cmd = "../test/rails_new"
 
       puts "running:"
       puts "$ #{cmd} (#{`pwd`.strip})"

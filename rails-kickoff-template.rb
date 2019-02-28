@@ -7,6 +7,18 @@ RUBY_REQUIREMENT = ">= 2.5.2"
 REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
 $using_sidekiq = false
 
+YES_ALL = ENV['YES_ALL'] == "1"
+
+def yes? *a
+  return true if YES_ALL
+  super
+end
+
+def no? *a
+  return false if YES_ALL
+  super
+end
+
 def git_proxy(**args)
   git args if $use_git
 end
@@ -50,8 +62,6 @@ def run_template!
   setup_webpacker
 
   output_final_instructions
-
-  exit
 end
 
 def add_gems
@@ -410,6 +420,7 @@ def setup_webpacker
 end
 
 run_template!
-if yes?("Is this template being run on an existing application? (usually no)")
+
+if no?("Is this a new application?")
   run_after_bundle_callbacks
 end
