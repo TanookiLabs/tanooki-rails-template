@@ -128,22 +128,24 @@ def setup_bullet
 end
 
 def output_final_instructions
-  msg = <<~MSG
-    Template Completed!
+  after_bundle do 
+    msg = <<~MSG
+      Template Completed!
 
-    Please review the above output for issues.
+      Please review the above output for issues.
 
-    To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
-    1) Setup the Skylight ENV variable
-    2) Configure Sentry
-    3) Add the jemalloc buildpack:
-      $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
-    4) Setup Redis (if using Sidekiq)
-    5) Review your README.md file for needed updates
-    6) Review your Gemfile for formatting
-  MSG
+      To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
+      1) Setup the Skylight ENV variable
+      2) Configure Sentry
+      3) Add the jemalloc buildpack:
+        $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
+      4) Setup Redis (if using Sidekiq)
+      5) Review your README.md file for needed updates
+      6) Review your Gemfile for formatting
+    MSG
 
-  say msg, :magenta
+    say msg, :magenta
+  end
 end
 
 def setup_javascript
