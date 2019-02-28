@@ -128,7 +128,7 @@ def setup_bullet
 end
 
 def output_final_instructions
-  after_bundle do 
+  after_bundle do
     msg = <<~MSG
       Template Completed!
 
