@@ -7,6 +7,18 @@ RUBY_REQUIREMENT = ">= 2.5.2"
 REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
 $using_sidekiq = false
 
+YES_ALL = ENV['YES_ALL'] == "1"
+
+def yes? *a
+  return true if YES_ALL
+  super
+end
+
+def no? *a
+  return false if YES_ALL
+  super
+end
+
 def git_proxy(**args)
   git args if $use_git
 end
@@ -40,11 +52,14 @@ def run_template!
   setup_linters
 
   setup_javascript
+  setup_generators
 
   setup_readme
   create_database
 
   fix_bundler_binstub
+
+  setup_webpacker
 
   output_final_instructions
 end
@@ -372,7 +387,42 @@ def assert_minimum_rails_and_ruby_version!
   exit 1 if no?(prompt)
 end
 
+def setup_generators
+  initializer "generators.rb", <<~EOF
+    Rails.application.config.generators do |g|
+      # use UUIDs by default
+      g.orm :active_record, primary_key_type: :uuid
+
+      # limit default generation
+      g.test_framework(
+        :rspec,
+        fixtures: true,
+        view_specs: false,
+        controller_specs: false,
+        routing_specs: false,
+        request_specs: false,
+      )
+
+      # prevent generating js/css/helper files
+      g.assets false
+      g.helper false
+
+      g.fixture_replacement :factory_bot, dir: "spec/factories"
+    end
+  EOF
+
+  git_proxy_commit "Configured generators (UUIDs, less files)"
+end
+
+def setup_webpacker
+  if yes?("Setup webpacker? (skip this if you removed --webpack)")
+    bundle_command "exec rails webpacker:install"
+    git_proxy_commit "Initialized webpacker"
+  end
+end
+
 run_template!
-if yes?("Is this template being run on an existing application? (usually no)")
+
+if no?("Is this a new application?")
   run_after_bundle_callbacks
 end
