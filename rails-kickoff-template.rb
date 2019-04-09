@@ -65,7 +65,7 @@ def run_template!
 end
 
 def add_gems
-  gem "haml-rails"
+  gem "hamlit-rails"
   gem "sentry-raven"
   gem "skylight"
 
@@ -82,6 +82,7 @@ def add_gems
 
   gem_group :development do
     gem "bullet"
+    gem "html2haml"
   end
 
   gem_group :test do
@@ -94,7 +95,7 @@ end
 
 def setup_haml
   after_bundle do
-    run "yes | HAML_RAILS_DELETE_ERB=true rake haml:erb2haml"
+    run "yes | HAML_RAILS_DELETE_ERB=true bundle exec rake hamlit:erb2haml"
     git_proxy_commit "Use Haml"
   end
 end
@@ -151,8 +152,6 @@ end
 
 def setup_javascript
   uncomment_lines "bin/setup", "bin/yarn"
-  uncomment_lines "bin/update", "bin/yarn"
-
   git_proxy_commit "Configure Javascript"
 end
 
