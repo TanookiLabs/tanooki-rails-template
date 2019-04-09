@@ -415,14 +415,17 @@ def setup_generators
 end
 
 def setup_webpacker
-  if yes?("Setup webpacker? (skip this if you removed --webpack)")
-    bundle_command "exec rails webpacker:install"
-    git_proxy_commit "Initialized webpacker"
+  after_bundle do
+    if yes?("Setup webpacker? (skip this if you removed --webpack)")
+      bundle_command "exec rails webpacker:install"
+      git_proxy_commit "Initialized webpacker"
+    end
   end
 end
 
 run_template!
 
 if no?("Is this a new application?")
+  $skip_webpacker_install = true
   run_after_bundle_callbacks
 end
