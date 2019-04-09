@@ -94,7 +94,7 @@ end
 
 def setup_haml
   after_bundle do
-    run "yes | HAML_RAILS_DELETE_ERB=true rake haml:erb2haml"
+    run "yes | HAML_RAILS_DELETE_ERB=true bundle_exec rake haml:erb2haml"
     git_proxy_commit "Use Haml"
   end
 end
