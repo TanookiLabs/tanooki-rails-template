@@ -426,6 +426,5 @@ end
 run_template!
 
 if no?("Is this a new application?")
-  $skip_webpacker_install = true
   run_after_bundle_callbacks
 end
