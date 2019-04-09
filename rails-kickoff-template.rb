@@ -142,6 +142,7 @@ def output_final_instructions
       4) Setup Redis (if using Sidekiq)
       5) Review your README.md file for needed updates
       6) Review your Gemfile for formatting
+      7) If you ran the install command with webpack=react, you also need to run: rake webpacker:install:react
     MSG
 
     say msg, :magenta
