@@ -178,6 +178,7 @@ def setup_linters
   gem "rubocop", require: false
   gem "rubocop-rspec", require: false
   gem "rubocop-thread_safety", require: false
+  gem "rubocop-performance", require: false
   gem "overcommit"
 
   after_bundle do

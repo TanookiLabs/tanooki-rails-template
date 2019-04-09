@@ -1,6 +1,7 @@
 require:
   - rubocop-rspec
   - rubocop-thread_safety
+  - rubocop-performance
 
 AllCops:
   DisplayCopNames: true
