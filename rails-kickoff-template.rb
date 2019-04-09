@@ -175,11 +175,13 @@ def setup_sidekiq
 end
 
 def setup_linters
-  gem "rubocop", require: false
-  gem "rubocop-rspec", require: false
-  gem "rubocop-thread_safety", require: false
-  gem "rubocop-performance", require: false
-  gem "overcommit"
+  gem_group :development, :test do
+    gem "rubocop", require: false
+    gem "rubocop-rspec", require: false
+    gem "rubocop-thread_safety", require: false
+    gem "rubocop-performance", require: false
+    gem "overcommit", require: false
+  end
 
   after_bundle do
     get "#{REPOSITORY_PATH}/.rubocop.yml", ".rubocop.yml"
