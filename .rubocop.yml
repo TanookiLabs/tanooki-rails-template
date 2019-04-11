@@ -1,5 +1,7 @@
-require: rubocop-rspec
-require: rubocop-thread_safety
+require:
+  - rubocop-rspec
+  - rubocop-thread_safety
+  - rubocop-performance
 
 AllCops:
   DisplayCopNames: true
