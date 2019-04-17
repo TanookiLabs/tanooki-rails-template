@@ -75,3 +75,7 @@ Style/StringLiterals:
 
 Style/StringLiteralsInInterpolation:
   Enabled: false
+
+RSpec/DescribeClass:
+  Exclude:
+    - spec/lint_spec.rb
