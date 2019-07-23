@@ -177,10 +177,8 @@ end
 
 def setup_linters
   gem_group :development, :test do
-    gem "rubocop", require: false
-    gem "rubocop-rspec", require: false
-    gem "rubocop-thread_safety", require: false
-    gem "rubocop-performance", require: false
+    gem "rubocop-github", require: false
+    gem "rubocop-rails", require: false
     gem "overcommit", require: false
   end
 
