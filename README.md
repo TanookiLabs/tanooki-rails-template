@@ -1,4 +1,4 @@
-[![Build Status](https://semaphoreci.com/api/v1/tanookilabs/tanooki-rails-template/branches/add-tests/badge.svg)](https://semaphoreci.com/tanookilabs/tanooki-rails-template)
+[![Build Status](https://semaphoreci.com/api/v1/tanookilabs/tanooki-rails-template/branches/master/badge.svg)](https://semaphoreci.com/tanookilabs/tanooki-rails-template)
 
 # Tanooki Rails Template
 
