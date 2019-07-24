@@ -49,7 +49,6 @@ def run_template!
   setup_haml
   setup_sentry
   setup_bullet
-  setup_linters
 
   setup_javascript
   setup_generators
@@ -60,6 +59,8 @@ def run_template!
   fix_bundler_binstub
 
   setup_webpacker
+
+  setup_linters
 
   output_final_instructions
 end
@@ -151,7 +152,6 @@ end
 
 def setup_javascript
   uncomment_lines "bin/setup", "bin/yarn"
-  uncomment_lines "bin/update", "bin/yarn"
 
   git_proxy_commit "Configure Javascript"
 end
@@ -183,8 +183,24 @@ def setup_linters
   end
 
   after_bundle do
-    get "#{REPOSITORY_PATH}/.rubocop.yml", ".rubocop.yml"
     get "#{REPOSITORY_PATH}/.eslintrc.json", ".eslintrc.json"
+
+    create_file ".rubocop.yml", <<~RB
+      require:
+        - rubocop-rails
+
+      inherit_gem:
+        rubocop-github:
+          - config/default.yml
+          - config/rails.yml
+
+      AllCops:
+        Exclude:
+        - "node_modules/**/*"
+        - "tmp/**/*"
+        - "vendor/**/*"
+        DisplayCopNames: true
+    RB
 
     pkg_txt = <<-JSON
     "scripts": {
