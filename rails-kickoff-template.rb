@@ -208,6 +208,7 @@ def setup_linters
         - "tmp/**/*"
         - "vendor/**/*"
         - "bin/**/*"
+        - "db/schema.rb"
         DisplayCopNames: true
     RB
 
