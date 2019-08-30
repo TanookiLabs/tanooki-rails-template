@@ -187,7 +187,11 @@ def setup_linters
   end
 
   after_bundle do
-    get "#{REPOSITORY_PATH}/.eslintrc.json", ".eslintrc.json"
+    create_file ".eslintrc.json", <<~ESLINTRC
+      {
+        "extends": "react-app"
+      }
+    ESLINTRC
 
     create_file ".rubocop.yml", <<~RB
       require:
@@ -203,12 +207,14 @@ def setup_linters
         - "node_modules/**/*"
         - "tmp/**/*"
         - "vendor/**/*"
+        - "bin/**/*"
         DisplayCopNames: true
     RB
 
     pkg_txt = <<-JSON
     "scripts": {
-      "lint": "yarn run eslint --ext .js --ext .jsx app/javascript"
+      "lint:check": "eslint 'app/**/*.js'",
+      "lint:fix": "eslint --fix 'app/**/*.js'"
     },
     JSON
 
@@ -219,17 +225,16 @@ def setup_linters
         PreCommit:
           EsLint:
             enabled: true
-            required_executable: "npm"
-            command: ["npm", "run", "lint", "-f", "compact"]
+            required_executable: "yarn"
+            command: ["yarn", "lint:fix"]
           RuboCop:
             enabled: true
             command: ["bundle", "exec", "rubocop"]
       OVERCOMMIT
     end
 
-    run "yarn add eslint --dev"
-    run "yarn add eslint-plugin-react --dev"
-    run "yarn add babel-eslint --dev"
+    # https://www.npmjs.com/package/eslint-config-react-app
+    run "yarn add --dev eslint eslint-config-react-app @typescript-eslint/eslint-plugin@1.x @typescript-eslint/parser@1.x babel-eslint@10.x eslint@6.x eslint-plugin-flowtype@3.x eslint-plugin-import@2.x eslint-plugin-jsx-a11y@6.x eslint-plugin-react@7.x eslint-plugin-react-hooks@1.x"
 
     git_proxy_commit "Setup styleguide and linters"
   end
