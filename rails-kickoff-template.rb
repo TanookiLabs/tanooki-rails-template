@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 # Tanooki Rails Kickoff Template
+#
+# References:
+# https://github.com/erikhuda/thor
+# https://www.rubydoc.info/github/wycats/thor/Thor
 
 RAILS_REQUIREMENT = ">= 5.2.1"
 RUBY_REQUIREMENT = ">= 2.5.2"
@@ -48,7 +52,7 @@ def run_template!
   setup_testing
   setup_haml
   setup_sentry
-  setup_bullet
+  setup_environments
 
   setup_javascript
   setup_generators
@@ -100,32 +104,32 @@ def setup_haml
   end
 end
 
-def setup_bullet
+def setup_environments
   inject_into_file "config/environments/development.rb", before: /^end\n/ do
     <<-RB
   config.after_initialize do
+    # https://github.com/flyerhzm/bullet#configuration
     Bullet.enable = true
-    # Bullet.sentry = true
-    Bullet.alert = false
-    Bullet.bullet_logger = true
-    Bullet.console = true
-    # Bullet.growl = true
     Bullet.rails_logger = true
-    # Bullet.add_footer = true
-    # Bullet.stacktrace_includes = [ "your_gem", "your_middleware" ]
-    # Bullet.stacktrace_excludes = [
-    #   "their_gem", "their_middleware", ["my_file.rb", "my_method"], ["my_file.rb", 16..20
-    # ]
-    # Bullet.slack = {
-    #   webhook_url: "http://some.slack.url",
-    #   channel: "#default",
-    #   username: "notifier"
-    #  }
-    # Bullet.raise = true
   end
     RB
   end
   git_proxy_commit "Configure Bullet"
+
+  gsub_file(
+    "config/environments/production.rb",
+    /config\.log_level = :debug/,
+    'config.log_level = ENV.fetch("LOG_LEVEL", "info").to_sym'
+  )
+
+  git_proxy_commit "Make :info the default log_level in production"
+
+  ["development", "test"].each do |env|
+    inject_into_file "config/environments/#{env}.rb", before: /^end\n/ do
+      "\n  config.action_controller.action_on_unpermitted_parameters = :raise\n"
+    end
+  end
+  git_proxy_commit "Raise an error when unpermitted parameters in development"
 end
 
 def output_final_instructions
