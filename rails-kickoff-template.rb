@@ -126,7 +126,7 @@ def setup_environments
 
   ["development", "test"].each do |env|
     inject_into_file "config/environments/#{env}.rb", before: /^end\n/ do
-      "  config.action_controller.action_on_unpermitted_parameters = :raise\n"
+      "\n  config.action_controller.action_on_unpermitted_parameters = :raise\n"
     end
   end
   git_proxy_commit "Raise an error when unpermitted parameters in development"
