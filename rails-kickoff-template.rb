@@ -66,6 +66,10 @@ def run_template!
 
   setup_linters
 
+  if yes? "Automatically lint code in a pre-commit hook?"
+    after_bundle { setup_commit_hooks }
+  end
+
   output_final_instructions
 end
 
@@ -183,7 +187,6 @@ def setup_linters
   gem_group :development, :test do
     gem "rubocop-github", require: false
     gem "rubocop-rails", require: false
-    gem "overcommit", require: false
   end
 
   after_bundle do
@@ -221,19 +224,6 @@ def setup_linters
 
     insert_into_file "package.json", pkg_txt, before: "\n  \"dependencies\": {"
 
-    create_file ".overcommit.yml" do
-      <<~OVERCOMMIT
-        PreCommit:
-          EsLint:
-            enabled: true
-            required_executable: "yarn"
-            command: ["yarn", "lint:fix"]
-          RuboCop:
-            enabled: true
-            command: ["bundle", "exec", "rubocop"]
-      OVERCOMMIT
-    end
-
     # https://www.npmjs.com/package/eslint-config-react-app
     run "yarn add --dev eslint eslint-config-react-app @typescript-eslint/eslint-plugin@1.x @typescript-eslint/parser@1.x babel-eslint@10.x eslint@6.x eslint-plugin-flowtype@3.x eslint-plugin-import@2.x eslint-plugin-jsx-a11y@6.x eslint-plugin-react@7.x eslint-plugin-react-hooks@1.x"
 
@@ -243,10 +233,58 @@ def setup_linters
   after_bundle do
     bundle_command "exec rubocop -a"
     git_proxy_commit "Autocorrect rubocop"
-
-    bundle_command "exec overcommit --install"
-    git_proxy_commit "Install overcommit precommit hook"
   end
+end
+
+def setup_commit_hooks
+  empty_directory ".git/hooks"
+  run "yarn add --dev @arkweid/lefthook"
+  append_file "lefthook.yml", <<~YML
+    # Lefthook - git hook management
+    # https://github.com/Arkweid/lefthook
+    #
+    # this runs your file through rubocop and eslint, automatically fixing what it
+    # can in a pre-commit. feel free to change it (e.g. pre-push instead of pre-commit),
+    # or to use local overrides to customize or disable it.
+    #
+    # example task running prettier.io:
+    #
+    # pre-commit:
+    #   commands:
+    #     prettier:
+    #       glob: "*.{js,css,scss,json,md}"
+    #       run: yarn prettier --write {staged_files} && git add {staged_files}
+    #
+    # to override or turn off pre-commit hooks, add a lefthook-local.yml
+    #
+    # pre-commit:
+    #   commands:
+    #     rubocop:
+    #       skip: true
+    #     eslint:
+    #       skip: true
+    #
+    # more info:
+    # https://github.com/Arkweid/lefthook#local-config
+    pre-commit:
+      parallel: true
+      commands:
+        rubocop:
+          glob: "{*.rb,*.rake,Gemfile}"
+          run: bin/bundle exec rubocop {staged_files} -a && git add {staged_files}
+        eslint:
+          glob: "*.js"
+          run:
+            yarn eslint {staged_files} --fix && git add {staged_files}
+  YML
+  run "yarn lefthook install"
+
+  append_file ".gitignore", <<~GITIGNORE
+
+    lefthook-local.yml
+  GITIGNORE
+
+  git_proxy_commit "Install lefthook"
 end
 
 def setup_email
