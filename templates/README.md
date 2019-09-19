@@ -53,7 +53,7 @@ Note that this means that if you do not want emails to be sent out, you should n
 
 This projects uses RuboCop and ESLint to catch errors and keep style consistent.
 
-It also uses [lefthook][lh], which can be locally disabled. Use `git commit --no-verify` to skip checks, or see [./lefthook.yml](./lefthook.yml) for info on how to change it’s setup.
+It also uses [lefthook][lh] to manage git hooks. Use `git commit --no-verify` to skip checks, or see [./lefthook.yml](./lefthook.yml) for info on how to change its setup.
 
 [lh]: https://github.com/Arkweid/lefthook
 
