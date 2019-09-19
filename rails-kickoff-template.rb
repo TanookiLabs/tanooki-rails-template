@@ -237,9 +237,7 @@ def setup_linters
 end
 
 def setup_commit_hooks
-  empty_directory ".git/hooks"
-  run "yarn add --dev @arkweid/lefthook"
-  append_file "lefthook.yml", <<~YML
+  create_file "lefthook.yml", <<~YML
     # Lefthook - git hook management
     # https://github.com/Arkweid/lefthook
     #
@@ -277,10 +275,12 @@ def setup_commit_hooks
           run:
             yarn eslint {staged_files} --fix && git add {staged_files}
   YML
+
+  empty_directory ".git/hooks"
+  run "yarn add --dev @arkweid/lefthook"
   run "yarn lefthook install"
 
   append_file ".gitignore", <<~GITIGNORE
-
     lefthook-local.yml
   GITIGNORE
 
