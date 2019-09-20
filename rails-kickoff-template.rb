@@ -269,7 +269,7 @@ def setup_commit_hooks
       commands:
         rubocop:
           glob: "{*.rb,*.rake,Gemfile}"
-          run: bin/bundle exec rubocop {staged_files} -a && git add {staged_files}
+          run: bin/bundle exec rubocop {staged_files} --safe-auto-correct && git add {staged_files}
         eslint:
           glob: "*.js"
           run:
