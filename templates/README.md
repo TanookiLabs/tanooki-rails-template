@@ -49,17 +49,17 @@ This project is configured with the [mta-settings](https://github.com/tpope/mta-
 
 Note that this means that if you do not want emails to be sent out, you should not have any of these environment variables set (except for Mailtrap).
 
-### Coding Style / Organization
+### Coding Style
 
-This projects uses RuboCop and ESLint to enforce coding style.
+This projects uses RuboCop and ESLint to catch errors and keep style consistent.
 
-It also uses the [overcommit gem](https://github.com/brigade/overcommit) to handle pre-commit checks of code. It is recommended to find a way to automatically correct things like layout and formatting in your editor or otherwise. `rubocop -a` and `prettier` are two recommended approaches for this. Overcommit also checks your commit message using the `commit-msg` hook.
+It also uses [lefthook][lh] to manage git hooks. Use `git commit --no-verify` to skip checks, or see [./lefthook.yml](./lefthook.yml) for info on how to change its setup.
 
-If you need to commit despite the precommit warning, you may use, `no-verify` or SKIP the particular test:
+[lh]: https://github.com/Arkweid/lefthook
 
-`SKIP=RuboCop git commit` or `git commit --no-verify`
+Making changes to the linter setup? Please share your fixes and make a PR to the [Tanooki template][tt] so future projects may benefit.
 
-If you find yourself changing your configuration, please consider submitting a request to the Tanooki [template](https://github.com/TanookiLabs/tanooki-rails-template).
+[tt]: https://github.com/TanookiLabs/tanooki-rails-template
 
 ### Important rake tasks
 
@@ -68,14 +68,24 @@ If you find yourself changing your configuration, please consider submitting a r
 ### Important ENV variables
 
 Configuring Servers:
-`WEB_CONCURRENCY` - Number of Puma workers
-`RAILS_MAX_THREADS` - Number of threads per Puma worker
-`SIDEKIQ_CONCURRENCY` - Number of Sidekiq workers
 
-`rack-timeout` ENV variables and defaults
-service_timeout:   15     # RACK_TIMEOUT_SERVICE_TIMEOUT
-wait_timeout:      30     # RACK_TIMEOUT_WAIT_TIMEOUT
-wait_overtime:     60     # RACK_TIMEOUT_WAIT_OVERTIME
-service_past_wait: false  # RACK_TIMEOUT_SERVICE_PAST_WAIT
+```
+WEB_CONCURRENCY - Number of Puma workers
+RAILS_MAX_THREADS - Number of threads per Puma worker
+SIDEKIQ_CONCURRENCY - Number of Sidekiq workers
+```
 
-Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to load `.env` files. Use `.env.development` and `.env.test` to setup *shared* ENV variables for development and test, and use `.env` files ending in `.local` for variables specific to you.
+rack-timeout:
+
+```
+RACK_TIMEOUT_SERVICE_TIMEOUT
+RACK_TIMEOUT_WAIT_TIMEOUT
+RACK_TIMEOUT_WAIT_OVERTIME
+RACK_TIMEOUT_SERVICE_PAST_WAIT
+```
+
+refer to [rack-timeout][rt] for default values
+
+[rt]: https://github.com/sharpstone/rack-timeout#configuring
+
+Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to load `.env` files. Use `.env.development` and `.env.test` to setup _shared_ ENV variables for development and test, and use `.env` files ending in `.local` for variables specific to you.
