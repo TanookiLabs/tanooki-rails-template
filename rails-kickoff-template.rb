@@ -474,6 +474,7 @@ def setup_generators
       g.helper false
 
       g.fixture_replacement :factory_bot, dir: "spec/factories"
+      g.factory_bot suffix: "factory"
     end
   EOF
 
