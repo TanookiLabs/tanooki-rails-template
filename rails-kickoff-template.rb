@@ -6,8 +6,8 @@
 # https://github.com/erikhuda/thor
 # https://www.rubydoc.info/github/wycats/thor/Thor
 
-RAILS_REQUIREMENT = ">= 5.2.1"
-RUBY_REQUIREMENT = ">= 2.5.2"
+RAILS_REQUIREMENT = ">= 6.0.0"
+RUBY_REQUIREMENT = ">= 2.6.3"
 REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
 $using_sidekiq = false
 
@@ -70,6 +70,12 @@ def run_template!
     after_bundle { setup_commit_hooks }
   end
 
+  if yes? "Set up html emails?"
+    setup_html_emails
+  end
+
+  setup_dot_env
+
   output_final_instructions
 end
 
@@ -97,6 +103,7 @@ def add_gems
     gem "capybara"
     gem "capybara-selenium"
   end
+
 
   git_proxy_commit "Add custom gems"
 end
@@ -176,8 +183,9 @@ def setup_sidekiq
       "    config.active_job.queue_adapter = :sidekiq\n\n",
       after: "class Application < Rails::Application\n"
 
-    append_file "Procfile",
-      "worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} jemalloc.sh bundle exec sidekiq -t 25\n"
+    append_file "Procfile", <<~PROCFILE
+      worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} jemalloc.sh bundle exec sidekiq -t 25 -q default -q mailers
+    PROCFILE
 
     git_proxy_commit "Setup Sidekiq"
   end
@@ -288,7 +296,7 @@ def setup_commit_hooks
 end
 
 def setup_email
-  gem 'mta-settings'
+  gem "mta-settings"
 end
 
 def create_database
@@ -417,9 +425,25 @@ def main_config_files
   uncomment_lines "config/puma.rb", "workers ENV.fetch"
   uncomment_lines "config/puma.rb", /preload_app!$/
 
-  create_file "Procfile", "web: jemalloc.sh bundle exec puma -C config/puma.rb\nrelease: bundle exec rake db:migrate\n"
+  create_file "Procfile", <<~PROCFILE
+    web: jemalloc.sh bundle exec puma -C config/puma.rb
+    release: bundle exec rake db:migrate
+  PROCFILE
 
-  get "#{REPOSITORY_PATH}/.editorconfig", ".editorconfig"
+  create_file ".editorconfig", <<~EDITORCONFIG
+    # This file is for unifying the coding style for different editors and IDEs
+    # editorconfig.org
+
+    root = true
+
+    [*]
+    charset = utf-8
+    trim_trailing_whitespace = true
+    insert_final_newline = true
+    indent_style = space
+    indent_size = 2
+    end_of_line = lf
+  EDITORCONFIG
 
   append_file ".gitignore", <<~GITIGNORE
 
@@ -431,6 +455,8 @@ def main_config_files
     .env.local
     .env.test.local
   GITIGNORE
+
+  create_file ".env.sample"
 
   git_proxy_commit "Setup config files"
 end
@@ -488,6 +514,20 @@ def setup_webpacker
       git_proxy_commit "Initialized webpacker"
     end
   end
+end
+
+def setup_html_emails
+  gem "inky-rb", require: "inky"
+  gem "premailer-rails"
+  gem "sass"
+
+  append_file ".env.sample", <<~ENV
+    ASSET_HOST=http://localhost:5100
+  ENV
+end
+
+def setup_dot_env
+  copy_file ".env.sample", ".env"
 end
 
 run_template!
