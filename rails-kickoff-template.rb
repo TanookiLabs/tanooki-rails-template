@@ -44,7 +44,6 @@ def run_template!
   end
 
   setup_sidekiq
-  setup_email
 
   add_gems
   main_config_files
@@ -74,7 +73,7 @@ def run_template!
     setup_html_emails
   end
 
-  setup_dot_env
+  generate_tmp_dirs
 
   output_final_instructions
 end
@@ -83,6 +82,7 @@ def add_gems
   gem "haml-rails"
   gem "sentry-raven"
   gem "skylight"
+  gem "mta-settings"
 
   gem_group :production do
     gem "rack-timeout"
@@ -97,6 +97,7 @@ def add_gems
 
   gem_group :development do
     gem "bullet"
+    gem "letter_opener"
   end
 
   gem_group :test do
@@ -125,7 +126,15 @@ def setup_environments
   end
     RB
   end
-  git_proxy_commit "Configure Bullet"
+  git_proxy_commit "Configure Bullet in development"
+
+  inject_into_file "config/environments/development.rb", before: /^end\n/ do
+    <<-RB
+  config.action_mailer.delivery_method = :letter_opener
+  config.action_mailer.perform_deliveries = true
+    RB
+  end
+  git_proxy_commit "Configure letter opener in development"
 
   gsub_file(
     "config/environments/production.rb",
@@ -284,7 +293,6 @@ def setup_commit_hooks
             yarn eslint {staged_files} --fix && git add {staged_files}
   YML
 
-  empty_directory ".git/hooks"
   run "yarn add --dev @arkweid/lefthook"
   run "yarn lefthook install"
 
@@ -295,9 +303,7 @@ def setup_commit_hooks
   git_proxy_commit "Install lefthook"
 end
 
-def setup_email
-  gem "mta-settings"
-end
+
 
 def create_database
   after_bundle do
@@ -456,6 +462,7 @@ def main_config_files
     .env.test.local
   GITIGNORE
 
+  create_file ".env"
   create_file ".env.sample"
 
   git_proxy_commit "Setup config files"
@@ -520,14 +527,64 @@ def setup_html_emails
   gem "inky-rb", require: "inky"
   gem "premailer-rails"
   gem "sass"
+  run "yarn add https://github.com/TanookiLabs/foundation-emails.git"
 
-  append_file ".env.sample", <<~ENV
-    ASSET_HOST=http://localhost:5100
-  ENV
+  [".env", ".env.sample"].each do |env_file|
+    append_file env_file, <<~ENV
+      ASSET_HOST=http://localhost:5100
+    ENV
+  end
+
+  initializer "inky.rb", <<~RB
+    Inky.configure do |config|
+      config.template_engine = :haml
+    end
+  RB
+
+  initializer "action_mailer.rb", <<~RB
+    Rails.application.config.action_mailer.asset_host = ENV["ASSET_HOST"]
+  RB
+
+  append_file "config/initializers/assets.rb", <<~RB
+    Rails.application.config.assets.precompile += %w(email.css)
+  RB
+
+  remove_file "app/views/layouts/mailer.html.haml"
+  create_file "app/views/layouts/mailer.html.inky", <<~HAML
+    !!! Strict
+    %html{:xmlns => "http://www.w3.org/1999/xhtml"}
+      %head
+        %meta{:content => "text/html; charset=utf-8", "http-equiv" => "Content-Type"}/
+        %meta{:content => "width=device-width", :name => "viewport"}/
+        = stylesheet_link_tag "email"
+      %body
+        %table.body
+          %tr
+            %td.center{:align => "center", :valign => "top"}
+              %center
+                %container
+                  %row
+                    %columns
+                      %br
+                      = yield
+  HAML
+
+  create_file "app/assets/stylesheets/email.scss", <<~CSS
+    // variable references:
+    // https://github.com/TanookiLabs/foundation-emails/blob/develop/scss/settings/_settings.scss
+    // https://github.com/TanookiLabs/foundation-emails/blob/develop/scss/components/_typography.scss
+
+    // FYI: this is from node_modules, not bundler
+    @import "foundation-emails/scss/foundation-emails";
+  CSS
+
+  git_proxy_commit "Setup html emails"
 end
 
-def setup_dot_env
-  copy_file ".env.sample", ".env"
+def generate_tmp_dirs
+  # unclear why this is needed, but `heroku local` fails without it
+  # "No such file or directory @ rb_sysopen - tmp/pids/server.pid"
+  empty_directory "tmp/pids"
 end
 
 run_template!
