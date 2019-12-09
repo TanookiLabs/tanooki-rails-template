@@ -202,8 +202,7 @@ end
 
 def setup_linters
   gem_group :development, :test do
-    gem "rubocop-github", require: false
-    gem "rubocop-rails", require: false
+    gem "standard"
   end
 
   after_bundle do
@@ -212,25 +211,6 @@ def setup_linters
         "extends": "react-app"
       }
     ESLINTRC
-
-    create_file ".rubocop.yml", <<~RB
-      require:
-        - rubocop-rails
-
-      inherit_gem:
-        rubocop-github:
-          - config/default.yml
-          - config/rails.yml
-
-      AllCops:
-        Exclude:
-        - "node_modules/**/*"
-        - "tmp/**/*"
-        - "vendor/**/*"
-        - "bin/**/*"
-        - "db/schema.rb"
-        DisplayCopNames: true
-    RB
 
     pkg_txt = <<-JSON
     "scripts": {
@@ -248,8 +228,8 @@ def setup_linters
   end
 
   after_bundle do
-    bundle_command "exec rubocop -a"
-    git_proxy_commit "Autocorrect rubocop"
+    bundle_command "exec standardrb --fix"
+    git_proxy_commit "automatically format code with standard"
   end
 end
 
@@ -258,7 +238,7 @@ def setup_commit_hooks
     # Lefthook - git hook management
     # https://github.com/Arkweid/lefthook
     #
-    # this runs your file through rubocop and eslint, automatically fixing what it
+    # this runs your file through standard and eslint, automatically fixing what it
     # can in a pre-commit. feel free to change it (e.g. pre-push instead of pre-commit),
     # or to use local overrides to customize or disable it.
     #
@@ -274,7 +254,7 @@ def setup_commit_hooks
     #
     # pre-commit:
     #   commands:
-    #     rubocop:
+    #     standardrb:
     #       skip: true
     #     eslint:
     #       skip: true
@@ -284,9 +264,9 @@ def setup_commit_hooks
     pre-commit:
       parallel: true
       commands:
-        rubocop:
+        standardrb:
           glob: "{*.rb,*.rake,Gemfile}"
-          run: bin/bundle exec rubocop {staged_files} --safe-auto-correct && git add {staged_files}
+          run: bin/bundle exec standardrb {staged_files} --safe-auto-correct && git add {staged_files}
         eslint:
           glob: "*.js"
           run:
