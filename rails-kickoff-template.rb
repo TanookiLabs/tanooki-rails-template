@@ -81,7 +81,6 @@ end
 def add_gems
   gem "haml-rails"
   gem "sentry-raven"
-  gem "skylight"
   gem "mta-settings"
 
   gem_group :production do
@@ -160,14 +159,13 @@ def output_final_instructions
       Please review the above output for issues.
 
       To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
-      1) Setup the Skylight ENV variable
-      2) Configure Sentry
-      3) Add the jemalloc buildpack:
+      1) Configure Sentry
+      2) Add the jemalloc buildpack:
         $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
-      4) Setup Redis (if using Sidekiq)
-      5) Review your README.md file for needed updates
-      6) Review your Gemfile for formatting
-      7) If you ran the install command with webpack=react, you also need to run: rake webpacker:install:react
+      3) Setup Redis (if using Sidekiq)
+      4) Review your README.md file for needed updates
+      5) Review your Gemfile for formatting
+      6) If you ran the install command with webpack=react, you also need to run: rake webpacker:install:react
     MSG
 
     say msg, :magenta

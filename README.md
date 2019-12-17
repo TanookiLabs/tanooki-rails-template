@@ -259,7 +259,6 @@ configure _app/controllers/application_controller.rb_
 ###### Other gems
 
 ```bash
-bundle add skylight
 bundle add dotenv-rails --group "development, test"
 bundle add pry-rails --group "development, test"
 bundle add bullet --group "development"

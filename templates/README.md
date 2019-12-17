@@ -3,7 +3,6 @@
 ### Services used
 
 - Postgresql
-- [Skylight](https://www.skylight.io/) (performance monitoring)
 - Sentry (exception reporting)
 - Redis (required for Sidekiq)
 
