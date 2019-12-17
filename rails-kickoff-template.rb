@@ -47,6 +47,7 @@ def run_template!
 
   add_gems
   main_config_files
+  heroku_ci_file
 
   setup_testing
   setup_haml
@@ -89,6 +90,7 @@ def add_gems
 
   gem_group :development, :test do
     gem "rspec-rails"
+    gem "rspec_tap", require: false
     gem "factory_bot_rails"
     gem "dotenv-rails"
     gem "pry-rails"
@@ -444,6 +446,38 @@ def main_config_files
   create_file ".env.sample"
 
   git_proxy_commit "Setup config files"
+end
+
+def heroku_ci_file
+  create_file "app.json", <<~APPJSON
+    {
+      "environments": {
+        "test": {
+          "addons": ["heroku-redis:hobby-dev", "heroku-postgresql:in-dyno"],
+          "env": {
+            "RAILS_ENV": "test",
+            "DISABLE_SPRING": "true",
+            "CAPYBARA_WAIT_TIME": "10"
+          },
+          "scripts": {
+            "test-setup": "bundle exec rails assets:precompile",
+            "test": "bundle exec rspec -f RspecTap::Formatter"
+          },
+          "formation": {
+            "test": {
+              "quantity": 1
+            }
+          },
+          "buildpacks": [
+            { "url": "heroku/nodejs" },
+            { "url": "heroku/ruby" },
+            { "url": "https://github.com/heroku/heroku-buildpack-google-chrome" },
+            { "url": "https://github.com/heroku/heroku-buildpack-chromedriver" }
+          ]
+        }
+      }
+    }
+  APPJSON
 end
 
 def assert_minimum_rails_and_ruby_version!
