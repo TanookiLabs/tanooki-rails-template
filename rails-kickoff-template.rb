@@ -7,7 +7,7 @@
 # https://www.rubydoc.info/github/wycats/thor/Thor
 
 RAILS_REQUIREMENT = ">= 6.0.2"
-RUBY_REQUIREMENT = ">= 2.6.3"
+RUBY_REQUIREMENT = ">= 2.6.5"
 REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
 $using_sidekiq = false
 
