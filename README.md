@@ -1,9 +1,9 @@
-[![Build Status](https://semaphoreci.com/api/v1/tanookilabs/tanooki-rails-template/branches/master/badge.svg)](https://semaphoreci.com/tanookilabs/tanooki-rails-template)
-
 # Tanooki Rails Template
 
 This repository holds the Rails application template referred to in our
-[kickoff developer guide](https://github.com/TanookiLabs/developer-guides/blob/master/web/project-kickoff.md)
+[kickoff developer guide][ko].
+
+[ko]: https://github.com/TanookiLabs/developer-guides/blob/master/web/kickoff.md
 
 ### How to use this template
 
@@ -27,3 +27,5 @@ rails new command if you already know you will be using one of these frameworks_
 - [ ] Clean up Gemfile
 - [ ] Refer back to the kickoff guide and make sure you've followed the Heroku
       Checklist
+
+[![Build Status](https://semaphoreci.com/api/v1/tanookilabs/tanooki-rails-template/branches/master/badge.svg)](https://semaphoreci.com/tanookilabs/tanooki-rails-template)
