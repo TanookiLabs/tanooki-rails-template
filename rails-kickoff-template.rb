@@ -6,8 +6,8 @@
 # https://github.com/erikhuda/thor
 # https://www.rubydoc.info/github/wycats/thor/Thor
 
-RAILS_REQUIREMENT = ">= 6.0.0"
-RUBY_REQUIREMENT = ">= 2.6.3"
+RAILS_REQUIREMENT = ">= 6.0.2"
+RUBY_REQUIREMENT = ">= 2.6.5"
 REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
 $using_sidekiq = false
 
@@ -47,6 +47,7 @@ def run_template!
 
   add_gems
   main_config_files
+  heroku_ci_file
 
   setup_testing
   setup_haml
@@ -58,10 +59,6 @@ def run_template!
 
   setup_readme
   create_database
-
-  fix_bundler_binstub
-
-  setup_webpacker
 
   setup_linters
 
@@ -81,7 +78,6 @@ end
 def add_gems
   gem "haml-rails"
   gem "sentry-raven"
-  gem "skylight"
   gem "mta-settings"
 
   gem_group :production do
@@ -90,6 +86,7 @@ def add_gems
 
   gem_group :development, :test do
     gem "rspec-rails"
+    gem "rspec_tap", require: false
     gem "factory_bot_rails"
     gem "dotenv-rails"
     gem "pry-rails"
@@ -160,14 +157,13 @@ def output_final_instructions
       Please review the above output for issues.
 
       To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
-      1) Setup the Skylight ENV variable
-      2) Configure Sentry
-      3) Add the jemalloc buildpack:
+      1) Configure Sentry
+      2) Add the jemalloc buildpack:
         $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
-      4) Setup Redis (if using Sidekiq)
-      5) Review your README.md file for needed updates
-      6) Review your Gemfile for formatting
-      7) If you ran the install command with webpack=react, you also need to run: rake webpacker:install:react
+      3) Setup Redis (if using Sidekiq)
+      4) Review your README.md file for needed updates
+      5) Review your Gemfile for formatting
+      6) If you ran the install command with webpack=react, you also need to run: rake webpacker:install:react
     MSG
 
     say msg, :magenta
@@ -289,13 +285,6 @@ def create_database
   after_bundle do
     bundle_command "exec rails db:create db:migrate"
     git_proxy_commit "Create and migrate database"
-  end
-end
-
-def fix_bundler_binstub
-  after_bundle do
-    run "bundle binstubs bundler --force"
-    git_proxy_commit "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193"
   end
 end
 
@@ -448,6 +437,38 @@ def main_config_files
   git_proxy_commit "Setup config files"
 end
 
+def heroku_ci_file
+  create_file "app.json", <<~APPJSON
+    {
+      "environments": {
+        "test": {
+          "addons": ["heroku-redis:hobby-dev", "heroku-postgresql:in-dyno"],
+          "env": {
+            "RAILS_ENV": "test",
+            "DISABLE_SPRING": "true",
+            "CAPYBARA_WAIT_TIME": "10"
+          },
+          "scripts": {
+            "test-setup": "bundle exec rails assets:precompile",
+            "test": "bundle exec rspec -f RspecTap::Formatter"
+          },
+          "formation": {
+            "test": {
+              "quantity": 1
+            }
+          },
+          "buildpacks": [
+            { "url": "heroku/nodejs" },
+            { "url": "heroku/ruby" },
+            { "url": "https://github.com/heroku/heroku-buildpack-google-chrome" },
+            { "url": "https://github.com/heroku/heroku-buildpack-chromedriver" }
+          ]
+        }
+      }
+    }
+  APPJSON
+end
+
 def assert_minimum_rails_and_ruby_version!
   requirement = Gem::Requirement.new(RAILS_REQUIREMENT)
   rails_version = Gem::Version.new(Rails::VERSION::STRING)
@@ -492,15 +513,6 @@ def setup_generators
   EOF
 
   git_proxy_commit "Configured generators (UUIDs, less files)"
-end
-
-def setup_webpacker
-  after_bundle do
-    if yes?("Setup webpacker? (skip this if you removed --webpack)")
-      bundle_command "exec rails webpacker:install"
-      git_proxy_commit "Initialized webpacker"
-    end
-  end
 end
 
 def setup_html_emails
