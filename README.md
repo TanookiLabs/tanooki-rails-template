@@ -5,7 +5,7 @@ This repository holds the Rails application template referred to in our
 
 [ko]: https://github.com/TanookiLabs/developer-guides/blob/master/web/kickoff.md
 
-### How to use this template
+## Usage
 
 - [ ] Find the [newest version of ruby that heroku supports][h] Verify that you
       have the most recent stable Ruby version installed, and are using it
