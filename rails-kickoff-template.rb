@@ -60,8 +60,6 @@ def run_template!
   setup_readme
   create_database
 
-  setup_webpacker
-
   setup_linters
 
   if yes? "Automatically lint code in a pre-commit hook?"
@@ -515,15 +513,6 @@ def setup_generators
   EOF
 
   git_proxy_commit "Configured generators (UUIDs, less files)"
-end
-
-def setup_webpacker
-  after_bundle do
-    if yes?("Setup webpacker? (skip this if you removed --webpack)")
-      bundle_command "exec rails webpacker:install"
-      git_proxy_commit "Initialized webpacker"
-    end
-  end
 end
 
 def setup_html_emails
