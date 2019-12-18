@@ -7,13 +7,9 @@ This repository holds the Rails application template referred to in our
 
 ## Usage
 
-- [ ] Find the [newest version of ruby that heroku supports][h] Verify that you
-      have the most recent stable Ruby version installed, and are using it
-
-[h]: https://devcenter.heroku.com/articles/ruby-support#supported-runtimes
-
+- [ ] Find the [newest version of ruby that heroku supports][h] and make sure you're using it (via `ruby --version`)
 - [ ] Clone/create a directory for your rails app and move into it
-- [ ] Run the following:
+- [ ] Run `rails new` with the template with these commands:
 
 ```bash
 gem install rails --no-document
@@ -27,5 +23,7 @@ rails new command if you already know you will be using one of these frameworks_
 - [ ] Clean up Gemfile
 - [ ] Refer back to the kickoff guide and make sure you've followed the Heroku
       Checklist
+      
+[h]: https://devcenter.heroku.com/articles/ruby-support#supported-runtimes
 
 [![Build Status](https://semaphoreci.com/api/v1/tanookilabs/tanooki-rails-template/branches/master/badge.svg)](https://semaphoreci.com/tanookilabs/tanooki-rails-template)
