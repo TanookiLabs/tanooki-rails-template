@@ -6,7 +6,7 @@
 # https://github.com/erikhuda/thor
 # https://www.rubydoc.info/github/wycats/thor/Thor
 
-RAILS_REQUIREMENT = ">= 6.0.0"
+RAILS_REQUIREMENT = ">= 6.0.2"
 RUBY_REQUIREMENT = ">= 2.6.3"
 REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
 $using_sidekiq = false
@@ -59,8 +59,6 @@ def run_template!
 
   setup_readme
   create_database
-
-  fix_bundler_binstub
 
   setup_webpacker
 
@@ -289,13 +287,6 @@ def create_database
   after_bundle do
     bundle_command "exec rails db:create db:migrate"
     git_proxy_commit "Create and migrate database"
-  end
-end
-
-def fix_bundler_binstub
-  after_bundle do
-    run "bundle binstubs bundler --force"
-    git_proxy_commit "Fix bundler binstub\n\nhttps://github.com/rails/rails/issues/31193"
   end
 end
 
