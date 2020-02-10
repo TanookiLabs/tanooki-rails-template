@@ -576,7 +576,7 @@ end
 def generate_tmp_dirs
   empty_directory "tmp/pids"
 
-  append_file "tmp/pids/.keep", ""
+  create_file "tmp/pids/.keep", ""
 
   append_file ".gitignore", <<~GITIGNORE
     /tmp/pids/*
