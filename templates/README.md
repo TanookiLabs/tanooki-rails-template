@@ -1,27 +1,24 @@
 # PROJECT_NAME
 
-### Services used
+### Dependencies
 
-- Postgresql
-- Sentry (exception reporting)
-- Redis (required for Sidekiq)
+- ruby, bundler
+- node, yarn
+- postgresql
+- redis (when using sidekiq)
+- jemalloc `brew install jemalloc`
+- chromedriver `brew cask install chromedriver`
 
-### Local Setup Guide
-
-Important note: Please setup your local code editor with [EditorConfig](https://editorconfig.org/) for code normalization
-
-To setup the project for your local environment, please run the included script:
+### Setup
 
 ```bash
-$ bin/setup
+bin/setup
 ```
 
-### Running Tests
-
-This project uses RSpec for testing. To run tests:
+### Tests
 
 ```bash
-$ bin/rspec spec
+bin/rspec
 ```
 
 For javascript integration testing, we use Google Chromedriver. You may need to `brew install chromedriver` to get this working!
