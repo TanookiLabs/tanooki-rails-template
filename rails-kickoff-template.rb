@@ -279,8 +279,6 @@ def setup_commit_hooks
   git_proxy_commit "Install lefthook"
 end
 
-
-
 def create_database
   after_bundle do
     bundle_command "exec rails db:create db:migrate"
@@ -573,10 +571,21 @@ def setup_html_emails
   git_proxy_commit "Setup html emails"
 end
 
+# unclear why this is needed, but `heroku local` fails without it
+# "No such file or directory @ rb_sysopen - tmp/pids/server.pid"
 def generate_tmp_dirs
-  # unclear why this is needed, but `heroku local` fails without it
-  # "No such file or directory @ rb_sysopen - tmp/pids/server.pid"
   empty_directory "tmp/pids"
+
+  append_file "tmp/pids/.keep", ""
+
+  append_file ".gitignore", <<~GITIGNORE
+    /tmp/pids/*
+    !/tmp/.keep
+    !/tmp/pids
+    !/tmp/pids/.keep
+  GITIGNORE
+
+  git_proxy_commit "Add empty tmp/pids directory"
 end
 
 run_template!
