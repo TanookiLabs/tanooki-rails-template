@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # Tanooki Rails Kickoff Template
 #
 # References:
@@ -54,7 +52,6 @@ def run_template!
   setup_sentry
   setup_environments
 
-  setup_javascript
   setup_generators
 
   setup_readme
@@ -78,7 +75,6 @@ end
 def add_gems
   gem "haml-rails"
   gem "sentry-raven"
-  gem "mta-settings"
 
   gem_group :production do
     gem "rack-timeout"
@@ -89,11 +85,9 @@ def add_gems
     gem "rspec_tap", require: false
     gem "factory_bot_rails"
     gem "dotenv-rails"
-    gem "pry-rails"
   end
 
   gem_group :development do
-    gem "bullet"
     gem "letter_opener"
   end
 
@@ -116,30 +110,19 @@ end
 def setup_environments
   inject_into_file "config/environments/development.rb", before: /^end\n/ do
     <<-RB
-  config.after_initialize do
-    # https://github.com/flyerhzm/bullet#configuration
-    Bullet.enable = true
-    Bullet.rails_logger = true
-  end
-    RB
-  end
-  git_proxy_commit "Configure Bullet in development"
-
-  inject_into_file "config/environments/development.rb", before: /^end\n/ do
-    <<-RB
   config.action_mailer.delivery_method = :letter_opener
   config.action_mailer.perform_deliveries = true
     RB
   end
   git_proxy_commit "Configure letter opener in development"
 
-  gsub_file(
-    "config/environments/production.rb",
-    /config\.log_level = :debug/,
-    'config.log_level = ENV.fetch("LOG_LEVEL", "info").to_sym'
-  )
+  # gsub_file(
+  #   "config/environments/production.rb",
+  #   /config\.log_level = :debug/,
+  #   'config.log_level = ENV.fetch("LOG_LEVEL", "info").to_sym'
+  # )
 
-  git_proxy_commit "Make :info the default log_level in production"
+  # git_proxy_commit "Make :info the default log_level in production"
 
   ["development", "test"].each do |env|
     inject_into_file "config/environments/#{env}.rb", before: /^end\n/ do
@@ -168,12 +151,6 @@ def output_final_instructions
 
     say msg, :magenta
   end
-end
-
-def setup_javascript
-  uncomment_lines "bin/setup", "bin/yarn"
-
-  git_proxy_commit "Configure Javascript"
 end
 
 def setup_sidekiq
@@ -589,7 +566,3 @@ def generate_tmp_dirs
 end
 
 run_template!
-
-if no?("Is this a new application?")
-  run_after_bundle_callbacks
-end
