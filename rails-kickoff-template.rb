@@ -89,11 +89,9 @@ def add_gems
     gem "rspec_tap", require: false
     gem "factory_bot_rails"
     gem "dotenv-rails"
-    gem "pry-rails"
   end
 
   gem_group :development do
-    gem "bullet"
     gem "letter_opener"
   end
 
@@ -114,17 +112,6 @@ def setup_haml
 end
 
 def setup_environments
-  inject_into_file "config/environments/development.rb", before: /^end\n/ do
-    <<-RB
-  config.after_initialize do
-    # https://github.com/flyerhzm/bullet#configuration
-    Bullet.enable = true
-    Bullet.rails_logger = true
-  end
-    RB
-  end
-  git_proxy_commit "Configure Bullet in development"
-
   inject_into_file "config/environments/development.rb", before: /^end\n/ do
     <<-RB
   config.action_mailer.delivery_method = :letter_opener
