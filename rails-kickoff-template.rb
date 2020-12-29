@@ -6,7 +6,7 @@
 # https://github.com/erikhuda/thor
 # https://www.rubydoc.info/github/wycats/thor/Thor
 
-RAILS_REQUIREMENT = ">= 6.0.2"
+RAILS_REQUIREMENT = ">= 6.1.0"
 RUBY_REQUIREMENT = ">= 2.6.5"
 REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
 $using_sidekiq = false
@@ -122,7 +122,7 @@ def setup_environments
 
   gsub_file(
     "config/environments/production.rb",
-    /config\.log_level = :debug/,
+    /config\.log_level = :info/,
     'config.log_level = ENV.fetch("LOG_LEVEL", "info").to_sym'
   )
 
