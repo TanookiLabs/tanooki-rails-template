@@ -35,6 +35,8 @@ rails new command if you already know you will be using one of these frameworks_
 - [ ] Clean up Gemfile
 - [ ] Refer back to the [kickoff guide][kg] and make sure you've followed the Heroku
       Checklist
+- [ ] setup authentication with [devise](https://github.com/heartcombo/devise) if applicable
+- [ ] setup authorization with [action policy](https://github.com/palkan/action_policy) if applicable
 
 [h]: https://devcenter.heroku.com/articles/ruby-support#supported-runtimes
 [kg]: https://github.com/TanookiLabs/developer-guides/blob/master/rails/kickoff.md
