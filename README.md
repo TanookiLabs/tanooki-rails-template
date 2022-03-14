@@ -7,7 +7,7 @@ This repository holds the Rails application template referred to in our
 
 ## Usage
 
-1. Find the [newest version of ruby that heroku supports][h] and make sure you're using it (via `ruby --version`)
+1. Find the [newest version of ruby that heroku supports that has been released for more than 6 months][h] and make sure you're using it (via `ruby --version`)
 1. install rails and bundler globally
    ```bash
    gem install rails --no-document
