@@ -10,24 +10,28 @@ This repository holds the Rails application template referred to in our
 1. Find the [newest version of ruby that heroku supports that has been released for more than 6 months][h] and make sure you're using it (via `ruby --version`)
 1. install rails and bundler globally
    ```bash
+   gem update --system
    gem install rails --no-document
    gem update bundler
    ```
 1. Clone or create a directory for your rails app and move into it
 1. Run `rails new` with the template with these commands:
    ```bash
-   rails new . \
-      --database=postgresql \
-      --javascript=webpack \
-      --skip-test \
-      --skip-action-cable \
-      --skip-hotwire \
-      --skip-action-mailbox \
-      --skip-action-text \
-      --skip-hotwire \
-      --skip-jbuilder \
-      --template=https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master/rails-kickoff-template.rb
+   # make sure you're up to date!
+   rails --version 
+   rails new example-project-name \
+         --database=postgresql \
+         --javascript=esbuild \
+         --skip-test \
+         --skip-action-cable \
+         --skip-hotwire \
+         --skip-action-mailbox \
+         --skip-action-text \
+         --skip-hotwire \
+         --skip-jbuilder \
+         --template=https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master/rails-kickoff-template.rb
    ```
+
 
 _Note that you may also use `--webpack=react` or `--webpack=stimulus` during the
 rails new command if you already know you will be using one of these frameworks_

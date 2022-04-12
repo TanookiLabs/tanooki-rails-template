@@ -7,9 +7,8 @@
 RAILS_REQUIREMENT = ">= 6.0.2"
 RUBY_REQUIREMENT = ">= 2.6.5"
 REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
-$using_sidekiq = false
 
-YES_ALL = ENV['YES_ALL'] == "1"
+YES_ALL = ENV["YES_ALL"] == "1"
 
 def yes? *a
   return true if YES_ALL
@@ -74,7 +73,9 @@ end
 
 def add_gems
   gem "haml-rails"
-  gem "sentry-raven"
+  gem "sentry-ruby"
+  gem "sentry-rails"
+  gem "sentry-sidekiq"
 
   gem_group :production do
     gem "rack-timeout"
@@ -95,7 +96,6 @@ def add_gems
     gem "capybara"
     gem "capybara-selenium"
   end
-
 
   git_proxy_commit "Add custom gems"
 end
@@ -154,10 +154,6 @@ def output_final_instructions
 end
 
 def setup_sidekiq
-  $using_sidekiq = yes?("Do you want to setup Sidekiq?")
-
-  return unless $using_sidekiq
-
   gem "sidekiq"
 
   after_bundle do
@@ -265,27 +261,28 @@ end
 
 def setup_sentry
   initializer "sentry.rb", <<~RB
-    Raven.configure do |config|
-      config.sanitize_fields = Rails.application.config.filter_parameters.map(&:to_s)
+    # https://docs.sentry.io/platforms/ruby/guides/rails/
+    Sentry.init do |config|
+      config.breadcrumbs_logger = [:active_support_logger, :http_logger]
 
-      # consider async reporting: https://github.com/getsentry/raven-ruby#async
-
-      # config.transport_failure_callback = lambda { |event|
-      #   AdminMailer.email_admins("Oh god, it's on fire!", event).deliver_later
-      # }
+      # To activate performance monitoring, set one of these options.
+      # We recommend adjusting the value in production:
+      config.traces_sample_rate = 0.5
     end
   RB
 
   inject_into_class "app/controllers/application_controller.rb", "ApplicationController" do
     <<-RB
-  before_action :set_raven_context
+  before_action :set_sentry_context
 
   private
 
-  def set_raven_context
+  def set_sentry_context
     # Uncomment when user is setup:
-    # Raven.user_context(id: current_user.id) if current_user
-    Raven.extra_context(params: params.to_unsafe_h, url: request.url)
+    # Sentry.set_user({id: current_user.id, email: current_user.email}) if current_user
+    Sentry.configure_scope do |scope|
+      scope.set_context("request", {params: params.to_unsafe_h, url: request.url})
+    end
   end
     RB
   end
@@ -296,10 +293,6 @@ end
 def setup_readme
   remove_file "README.md"
   get "#{REPOSITORY_PATH}/templates/README.md", "README.md"
-  unless $using_sidekiq
-    gsub_file "README.md", /### Sidekiq.*###/, "###"
-    gsub_file "README.md", /^.*Sidekiq.*\n/, ""
-  end
 
   git_proxy_commit "Add README"
 end
