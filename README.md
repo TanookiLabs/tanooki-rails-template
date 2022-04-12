@@ -32,10 +32,6 @@ This repository holds the Rails application template referred to in our
          --template=https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master/rails-kickoff-template.rb
    ```
 
-
-_Note that you may also use `--webpack=react` or `--webpack=stimulus` during the
-rails new command if you already know you will be using one of these frameworks_
-
 - [ ] Clean up Gemfile
 - [ ] Refer back to the [kickoff guide][kg] and make sure you've followed the Heroku
       Checklist
