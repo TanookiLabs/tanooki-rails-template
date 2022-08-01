@@ -27,7 +27,6 @@ def run_template!
 
   add_gems
   main_config_files
-  heroku_ci_file
 
   setup_testing
   setup_haml
@@ -295,9 +294,15 @@ def setup_readme
 
     ### Important rake tasks
 
+    _TODO_
+
     ### Scheduled tasks
 
+    _TODO_
+
     ### Important ENV variables
+
+    Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to load `.env` files. Use `.env.development` and `.env.test` to setup _shared_ ENV variables for development and test, and use `.env` files ending in `.local` for variables specific to you.
 
     Configuring Servers:
 
@@ -307,7 +312,7 @@ def setup_readme
     SIDEKIQ_CONCURRENCY - Number of Sidekiq workers
     ```
 
-    rack-timeout:
+    [rack-timeout][rt]:
 
     ```
     RACK_TIMEOUT_SERVICE_TIMEOUT
@@ -316,11 +321,7 @@ def setup_readme
     RACK_TIMEOUT_SERVICE_PAST_WAIT
     ```
 
-    refer to [rack-timeout][rt] for default values
-
     [rt]: https://github.com/sharpstone/rack-timeout#configuring
-
-    Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to load `.env` files. Use `.env.development` and `.env.test` to setup _shared_ ENV variables for development and test, and use `.env` files ending in `.local` for variables specific to you.
   README
 
   git_commit_all "Add README"
@@ -434,37 +435,6 @@ def main_config_files
   git_commit_all "Setup config files"
 end
 
-def heroku_ci_file
-  create_file "app.json", <<~APPJSON
-    {
-      "environments": {
-        "test": {
-          "addons": ["heroku-redis:hobby-dev", "heroku-postgresql:in-dyno"],
-          "env": {
-            "RAILS_ENV": "test",
-            "DISABLE_SPRING": "true",
-            "CAPYBARA_WAIT_TIME": "10"
-          },
-          "scripts": {
-            "test-setup": "bundle exec rails assets:precompile",
-            "test": "bundle exec rspec -f RspecTap::Formatter"
-          },
-          "formation": {
-            "test": {
-              "quantity": 1
-            }
-          },
-          "buildpacks": [
-            { "url": "heroku/nodejs" },
-            { "url": "heroku/ruby" },
-            { "url": "https://github.com/heroku/heroku-buildpack-google-chrome" },
-            { "url": "https://github.com/heroku/heroku-buildpack-chromedriver" }
-          ]
-        }
-      }
-    }
-  APPJSON
-end
 
 def assert_minimum_rails_and_ruby_version!
   requirement = Gem::Requirement.new(RAILS_REQUIREMENT)
