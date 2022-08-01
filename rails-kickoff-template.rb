@@ -20,7 +20,6 @@ def run_template!
 
   after_bundle do
     git_commit_all "Commit after bundle"
-    run "bin/spring stop"
   end
 
   setup_sidekiq
@@ -54,16 +53,17 @@ def add_gems
   gem "sentry-ruby"
   gem "sentry-rails"
   gem "sentry-sidekiq"
-
-  gem_group :production do
-    gem "rack-timeout"
-  end
+  gem "inky-rb", require: "inky"
+  gem "premailer-rails"
+  gem "sass"
+  gem "sidekiq"
 
   gem_group :development, :test do
     gem "rspec-rails"
     gem "rspec_tap", require: false
     gem "factory_bot_rails"
     gem "dotenv-rails"
+    gem "standard"
   end
 
   gem_group :development do
@@ -74,6 +74,10 @@ def add_gems
   gem_group :test do
     gem "capybara"
     gem "capybara-selenium"
+  end
+
+  gem_group :production do
+    gem "rack-timeout"
   end
 
   git_commit_all "Add standard tanooki depencies"
@@ -119,6 +123,7 @@ def output_final_instructions
       Please review the above output for issues.
 
       To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
+
       1) Configure Sentry
       3) Setup Redis (if using Sidekiq)
       4) Review your README.md file for needed updates
@@ -130,26 +135,23 @@ def output_final_instructions
 end
 
 def setup_sidekiq
-  gem "sidekiq"
 
   after_bundle do
     insert_into_file "config/application.rb",
       "    config.active_job.queue_adapter = :sidekiq\n\n",
       after: "class Application < Rails::Application\n"
 
-    append_file "Procfile", <<~PROCFILE
-      worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} bundle exec sidekiq -t 25 -q default -q mailers
-    PROCFILE
+    ["Procfile", "Procfile.dev"].each do |file|
+      append_file file, <<~PROCFILE
+        worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} bundle exec sidekiq -t 25 -q default -q mailers
+      PROCFILE
+    end
 
     git_commit_all "Setup Sidekiq"
   end
 end
 
 def setup_linters
-  gem_group :development, :test do
-    gem "standard"
-  end
-
   after_bundle do
     create_file ".eslintrc.json", <<~ESLINTRC
       {
@@ -173,11 +175,8 @@ def setup_linters
   end
 
   after_bundle do
-    inside app_name do
-      run "bundle install"
-    end
     bundle_command "exec standardrb --fix"
-    git_commit_all "automatically format code with standard"
+    git_commit_all "Automatically format code with standard"
   end
 end
 
@@ -435,7 +434,6 @@ def main_config_files
   git_commit_all "Setup config files"
 end
 
-
 def assert_minimum_rails_and_ruby_version!
   requirement = Gem::Requirement.new(RAILS_REQUIREMENT)
   rails_version = Gem::Version.new(Rails::VERSION::STRING)
@@ -481,9 +479,6 @@ def setup_generators
 end
 
 def setup_html_emails
-  gem "inky-rb", require: "inky"
-  gem "premailer-rails"
-  gem "sass"
   run "yarn add https://github.com/TanookiLabs/foundation-emails.git"
 
   [".env", ".env.sample"].each do |env_file|
