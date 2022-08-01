@@ -193,7 +193,7 @@ def setup_commit_hooks
           glob: "{*.rb,*.rake,Gemfile}"
           run: bundle exec standardrb {staged_files} --safe-auto-correct && git add {staged_files}
         eslint:
-          glob: "*.js"
+          glob: "*.{js,jsx,ts,tsx}"
           run:
             yarn eslint {staged_files} --fix && git add {staged_files}
   YML
