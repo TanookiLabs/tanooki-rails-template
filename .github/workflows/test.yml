@@ -1,0 +1,13 @@
+name: test
+on: push
+jobs:
+  standard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - run: ruby test/test_rails_new.rb
