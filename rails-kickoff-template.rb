@@ -43,6 +43,8 @@ def run_template!
 
   setup_html_emails
 
+  setup_ci
+
   generate_tmp_dirs
 
   output_final_instructions
@@ -135,7 +137,6 @@ def output_final_instructions
 end
 
 def setup_sidekiq
-
   after_bundle do
     insert_into_file "config/application.rb",
       "    config.active_job.queue_adapter = :sidekiq\n\n",
@@ -548,6 +549,78 @@ def generate_tmp_dirs
   GITIGNORE
 
   git_commit_all "Add empty tmp/pids directory"
+end
+
+def setup_ci
+  create_file ".github/workflows/rails.yml", <<~GH_ACTIONS
+    name: rails
+    on: push
+    jobs:
+      standard:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v2
+          - name: Set up Ruby
+            uses: ruby/setup-ruby@v1
+            with:
+              bundler-cache: true
+          - run: bundle exec standardrb
+
+      rspec:
+        runs-on: ubuntu-latest
+        services:
+          postgres:
+            image: postgres
+            env:
+              POSTGRES_USER: postgres
+              POSTGRES_PASSWORD: password
+            ports: ["5432:5432"]
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+
+          chrome:
+            image: selenium/standalone-chrome:latest
+            volumes:
+              - /dev/shm:/dev/shm
+
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v2
+
+          - name: Set up Ruby
+            uses: ruby/setup-ruby@v1
+            with:
+              bundler-cache: true
+
+          - uses: actions/setup-node@v2
+            with:
+              cache: "yarn"
+
+          - name: Setup test database
+            env:
+              RAILS_ENV: test
+              DATABASE_URL: "postgres://postgres:password@localhost:5432/#{app_name}_test"
+            run: |
+              bin/rails db:create
+              bin/rails db:migrate
+
+          - name: Compile assets
+            env:
+              RAILS_ENV: test
+            run: |
+              yarn install --frozen-lockfile
+              bin/rails assets:precompile
+
+          - name: Run tests
+            env:
+              RAILS_ENV: test
+              DATABASE_URL: "postgres://postgres:password@localhost:5432/#{app_name}_test"
+            run: bundle exec rspec
+  GH_ACTIONS
 end
 
 run_template!
