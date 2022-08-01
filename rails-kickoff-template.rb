@@ -260,6 +260,7 @@ def setup_readme
 
     ```bash
     bin/setup
+    bundle exec lefthook install
     ```
 
     ### Tests
