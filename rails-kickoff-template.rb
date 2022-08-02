@@ -164,8 +164,10 @@ def setup_sidekiq
 
     ["Procfile", "Procfile.dev"].each do |file|
       append_file file, <<~PROCFILE
-        worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} bundle exec sidekiq -t 25 -q default -q mailers
+        worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} bundle exec sidekiq -t 25 -q default -q mailers -q active_storage_analysis -q active_storage_purge
       PROCFILE
+    rescue
+      puts "File not found, skipping: #{file}"
     end
 
     git_commit_all "Setup Sidekiq"
@@ -298,9 +300,7 @@ def setup_readme
 
     ### Email
 
-    This project is configured with the [mta-settings](https://github.com/tpope/mta-settings) gem for transparent configuration of e-mail based on Heroku environment variables. This supports Sendgrid, Mandrill, Postmark, Mailgun, and Mailtrap ENV variables.
-
-    Note that this means that if you do not want emails to be sent out, you should not have any of these environment variables set (except for Mailtrap).
+    _TODO_
 
     ### Coding Style
 
@@ -310,9 +310,6 @@ def setup_readme
 
     [lh]: https://github.com/Arkweid/lefthook
 
-    Making changes to the linter setup? Please share your fixes and make a PR to the [Tanooki template][tt] so future projects may benefit.
-
-    [tt]: https://github.com/TanookiLabs/tanooki-rails-template
 
     ### Important rake tasks
 
@@ -344,6 +341,9 @@ def setup_readme
     ```
 
     [rt]: https://github.com/sharpstone/rack-timeout#configuring
+
+    This project was bootstrapped with the [tanooki-rails-template](https://github.com/TanookiLabs/tanooki-rails-template).
+    Issue reports and PRs welcome!
   README
 
   git_commit_all "Add README"
