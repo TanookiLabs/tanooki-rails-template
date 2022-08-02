@@ -348,6 +348,18 @@ def setup_testing
     run "bundle binstubs rspec-core"
     git_commit_all "RSpec install"
 
+    create_file "spec/support/sidekiq.rb", <<~RB
+      # https://github.com/mperham/sidekiq/wiki/Testing
+      require "sidekiq/testing"
+      Sidekiq.logger.level = Logger::ERROR
+
+      RSpec.configure do |config|
+        config.before(:each) do
+          Sidekiq::Worker.clear_all
+        end
+      end
+    RB
+
     create_file "spec/support/capybara.rb", <<~RB
       require "selenium/webdriver"
 
