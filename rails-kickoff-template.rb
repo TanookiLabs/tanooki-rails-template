@@ -43,11 +43,18 @@ def run_template!
 
   setup_html_emails
 
+  setup_example_route
+
   setup_ci
 
   generate_tmp_dirs
 
   output_final_instructions
+end
+
+def setup_example_route
+  generate(:controller, "example", "index")
+  route "root to: 'example#index'"
 end
 
 def add_gems
@@ -338,7 +345,7 @@ def setup_testing
     run "bundle binstubs rspec-core"
     git_commit_all "RSpec install"
 
-    create_file "spec/support/chromedriver.rb", <<~RB
+    create_file "spec/support/capybara.rb", <<~RB
       require "selenium/webdriver"
 
       Capybara.register_driver :chrome do |app|
@@ -357,11 +364,11 @@ def setup_testing
         )
       end
 
-      Capybara.javascript_driver = :headless_chrome
+      Capybara.javascript_driver = ENV.fetch("CAPYBARA_DRIVER", "headless_chrome").to_sym
+      Capybara.default_driver = ENV.fetch("CAPYBARA_DRIVER", "headless_chrome").to_sym
     RB
 
     create_file "spec/lint_spec.rb", <<~RB
-      # consider switching to rake task in the future: https://github.com/thoughtbot/factory_bot/blob/master/GETTING_STARTED.md#linting-factories
       require "rails_helper"
       RSpec.describe "Factories" do
         it "lints successfully" do
@@ -370,12 +377,23 @@ def setup_testing
       end
     RB
 
+    create_file "spec/features/example_spec.rb", <<~RB
+      require "rails_helper"
+
+      RSpec.describe "example", type: :feature do
+        it "works" do
+          visit "/"
+          expect(page).to have_content("Find me in")
+        end
+      end
+    RB
+
     uncomment_lines "spec/rails_helper.rb", /Dir\[Rails\.root\.join/
+    comment_lines "spec/rails_helper.rb", "config.fixture_path ="
 
     gsub_file "spec/spec_helper.rb", "=begin\n", ""
     gsub_file "spec/spec_helper.rb", "=end\n", ""
-
-    comment_lines "spec/rails_helper.rb", "config.fixture_path ="
+    comment_lines "spec/spec_helper.rb", "config.profile_examples ="
 
     insert_into_file "spec/rails_helper.rb",
       "  config.include FactoryBot::Syntax::Methods\n\n",
@@ -485,11 +503,11 @@ def setup_generators
 end
 
 def setup_html_emails
-  run "yarn add https://github.com/TanookiLabs/foundation-emails.git"
+  run "yarn add foundation-emails"
 
   [".env", ".env.sample"].each do |env_file|
     append_file env_file, <<~ENV
-      ASSET_HOST=http://localhost:5100
+      ASSET_HOST=http://localhost:3000
     ENV
   end
 
@@ -527,13 +545,15 @@ def setup_html_emails
                       = yield
   HAML
 
-  create_file "app/assets/stylesheets/email.scss", <<~CSS
-    // variable references:
-    // https://github.com/TanookiLabs/foundation-emails/blob/develop/scss/settings/_settings.scss
-    // https://github.com/TanookiLabs/foundation-emails/blob/develop/scss/components/_typography.scss
+  create_file "app/assets/stylesheets/email.css", <<~CSS
+    @import "foundation-emails/dist/foundation-emails.css"; /* this is in node_modules */
+  CSS
 
-    // FYI: this is from node_modules, not bundler
-    @import "foundation-emails/scss/foundation-emails";
+  remove_file "app/assets/stylesheets/application.css"
+  create_file "app/assets/stylesheets/application.css", <<~CSS
+    /*
+     *= require_self
+     */
   CSS
 
   git_commit_all "Setup html emails"
@@ -617,7 +637,7 @@ def setup_ci
             env:
               RAILS_ENV: test
             run: |
-              yarn install --frozen-lockfile
+              yarn install
               bin/rails assets:precompile
 
           - name: Run tests
@@ -626,6 +646,10 @@ def setup_ci
               DATABASE_URL: "postgres://postgres:password@localhost:5432/#{app_name}_test"
             run: bundle exec rspec
   GH_ACTIONS
+
+  inside app_name do
+    run "bundle lock --add-platform x86_64-linux"
+  end
 end
 
 run_template!
