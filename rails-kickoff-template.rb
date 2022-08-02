@@ -45,8 +45,6 @@ def run_template!
 
   setup_html_emails
 
-  setup_example_route
-
   setup_ci
 
   generate_tmp_dirs
@@ -58,11 +56,6 @@ def ignore_files
   append_file ".gitignore", <<~GITIGNORE
     node_modules
   GITIGNORE
-end
-
-def setup_example_route
-  generate(:controller, "example", "index")
-  route "root to: 'example#index'"
 end
 
 def add_gems
@@ -385,16 +378,18 @@ def setup_testing
       end
     RB
 
-    create_file "spec/features/example_spec.rb", <<~RB
-      require "rails_helper"
-
-      RSpec.describe "example", type: :feature do
-        it "works" do
-          visit "/"
-          expect(page).to have_content("Find me in")
-        end
-      end
-    RB
+    # generate(:controller, "example", "index")
+    # route "root to: 'example#index'"
+    # create_file "spec/features/example_spec.rb", <<~RB
+    #   require "rails_helper"
+    #
+    #   RSpec.describe "example", type: :feature do
+    #     it "works" do
+    #       visit "/"
+    #       expect(page).to have_content("Find me in")
+    #     end
+    #   end
+    # RB
 
     uncomment_lines "spec/rails_helper.rb", /Dir\[Rails\.root\.join/
     comment_lines "spec/rails_helper.rb", "config.fixture_path ="
