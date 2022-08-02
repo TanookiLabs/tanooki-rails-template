@@ -10,11 +10,13 @@ REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-t
 
 def git_commit_all(msg)
   git add: "."
-  git commit: %( -m "#{msg}" )
+  git commit: %( -m "Tanooki rails template: #{msg}" )
 end
 
 def run_template!
   assert_minimum_rails_and_ruby_version!
+
+  ignore_files
 
   git_commit_all "Initial commit"
 
@@ -50,6 +52,12 @@ def run_template!
   generate_tmp_dirs
 
   output_final_instructions
+end
+
+def ignore_files
+  append_file ".gitignore", <<~GITIGNORE
+    node_modules
+  GITIGNORE
 end
 
 def setup_example_route
@@ -282,6 +290,8 @@ def setup_readme
 
     ### Deployment Information
 
+    _TODO_
+
     ### Sidekiq
 
     Please follow [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), especially making jobs idempotent and transactional.
@@ -353,15 +363,13 @@ def setup_testing
       end
 
       Capybara.register_driver :headless_chrome do |app|
-        capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(
-          chromeOptions: { args: %w[headless disable-gpu] }
-        )
+        options = ::Selenium::WebDriver::Chrome::Options.new
+        options.headless!
+        options.add_argument "--window-size=1680,1050"
 
-        Capybara::Selenium::Driver.new(
-          app,
+        Capybara::Selenium::Driver.new app,
           browser: :chrome,
-          desired_capabilities: capabilities
-        )
+          options: options
       end
 
       Capybara.javascript_driver = ENV.fetch("CAPYBARA_DRIVER", "headless_chrome").to_sym
