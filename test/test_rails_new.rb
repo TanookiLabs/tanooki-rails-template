@@ -13,10 +13,10 @@ class TestGettingStarted < Test::Unit::TestCase
 
   def test_build_succeeds
     Dir.chdir("tmp") {
-      assert(system("rm -rf ./test-project"), "existing rails app is removed")
+      assert(system("rm -rf ./testum"), "existing rails app is removed")
 
       cmd = <<~CMD
-        rails new test-project \
+        rails new testum \
               --database=postgresql \
               --javascript=esbuild \
               --skip-test \
@@ -39,13 +39,13 @@ class TestGettingStarted < Test::Unit::TestCase
   end
 
   def test_specs_pass
-    Dir.chdir("tmp/Foobar") {
+    Dir.chdir("tmp/testum") {
       assert(system("bundle exec rspec spec"), "tests pass")
     }
   end
 
   def test_rails_console
-    Dir.chdir("tmp/Foobar") {
+    Dir.chdir("tmp/testum") {
       assert(system("echo 'puts \"hello!\"' | bundle exec rails c"), "rails console works")
     }
   end
