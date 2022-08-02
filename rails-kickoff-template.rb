@@ -4,47 +4,30 @@
 # https://github.com/erikhuda/thor
 # https://www.rubydoc.info/github/wycats/thor/Thor
 
-RAILS_REQUIREMENT = ">= 6.0.2"
-RUBY_REQUIREMENT = ">= 2.6.5"
+RAILS_REQUIREMENT = ">= 7.0.3.1"
+RUBY_REQUIREMENT = ">= 3.1.0"
 REPOSITORY_PATH = "https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master"
 
-YES_ALL = ENV["YES_ALL"] == "1"
-
-def yes? *a
-  return true if YES_ALL
-  super
-end
-
-def no? *a
-  return false if YES_ALL
-  super
-end
-
-def git_proxy(**args)
-  git args if $use_git
-end
-
-def git_proxy_commit(msg)
-  git_proxy add: "."
-  git_proxy commit: %( -m "#{msg}" )
+def git_commit_all(msg)
+  git add: "."
+  git commit: %( -m "Tanooki rails template: #{msg}" )
 end
 
 def run_template!
   assert_minimum_rails_and_ruby_version!
-  $use_git = yes?("Do you want to add git commits (recommended)")
 
-  git_proxy_commit "Initial commit"
+  ignore_files
+
+  git_commit_all "Initial commit"
 
   after_bundle do
-    git_proxy_commit "Commit after bundle"
-    run "bin/spring stop"
+    git_commit_all "Commit after bundle"
   end
 
   setup_sidekiq
 
   add_gems
   main_config_files
-  heroku_ci_file
 
   setup_testing
   setup_haml
@@ -58,17 +41,21 @@ def run_template!
 
   setup_linters
 
-  if yes? "Automatically lint code in a pre-commit hook?"
-    after_bundle { setup_commit_hooks }
-  end
+  setup_commit_hooks
 
-  if yes? "Set up html emails?"
-    setup_html_emails
-  end
+  setup_html_emails
+
+  setup_ci
 
   generate_tmp_dirs
 
   output_final_instructions
+end
+
+def ignore_files
+  append_file ".gitignore", <<~GITIGNORE
+    node_modules
+  GITIGNORE
 end
 
 def add_gems
@@ -76,20 +63,22 @@ def add_gems
   gem "sentry-ruby"
   gem "sentry-rails"
   gem "sentry-sidekiq"
-
-  gem_group :production do
-    gem "rack-timeout"
-  end
+  gem "inky-rb", require: "inky"
+  gem "premailer-rails"
+  gem "sass"
+  gem "sidekiq"
 
   gem_group :development, :test do
     gem "rspec-rails"
     gem "rspec_tap", require: false
     gem "factory_bot_rails"
     gem "dotenv-rails"
+    gem "standard"
   end
 
   gem_group :development do
     gem "letter_opener"
+    gem "lefthook"
   end
 
   gem_group :test do
@@ -97,13 +86,17 @@ def add_gems
     gem "capybara-selenium"
   end
 
-  git_proxy_commit "Add custom gems"
+  gem_group :production do
+    gem "rack-timeout"
+  end
+
+  git_commit_all "Add standard tanooki depencies"
 end
 
 def setup_haml
   after_bundle do
     run "yes | HAML_RAILS_DELETE_ERB=true rake haml:erb2haml"
-    git_proxy_commit "Use Haml"
+    git_commit_all "Use Haml"
   end
 end
 
@@ -114,7 +107,7 @@ def setup_environments
   config.action_mailer.perform_deliveries = true
     RB
   end
-  git_proxy_commit "Configure letter opener in development"
+  git_commit_all "Configure letter opener in development"
 
   # gsub_file(
   #   "config/environments/production.rb",
@@ -122,14 +115,14 @@ def setup_environments
   #   'config.log_level = ENV.fetch("LOG_LEVEL", "info").to_sym'
   # )
 
-  # git_proxy_commit "Make :info the default log_level in production"
+  # git_commit_all "Make :info the default log_level in production"
 
   ["development", "test"].each do |env|
     inject_into_file "config/environments/#{env}.rb", before: /^end\n/ do
       "\n  config.action_controller.action_on_unpermitted_parameters = :raise\n"
     end
   end
-  git_proxy_commit "Raise an error when unpermitted parameters in development"
+  git_commit_all "Raise an error when unpermitted parameters in development"
 end
 
 def output_final_instructions
@@ -139,14 +132,17 @@ def output_final_instructions
 
       Please review the above output for issues.
 
+      At this point, make sure `bin/dev` spins up your rails app and consider adding
+
+      - authentication: https://github.com/heartcombo/devise
+      - authorization: https://github.com/palkan/action_policy
+      - api: https://github.com/rmosolgo/graphql-ruby
+
       To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
-      1) Configure Sentry
-      2) Add the jemalloc buildpack:
-        $ heroku buildpacks:add --index 1 https://github.com/gaffenyc/heroku-buildpack-jemalloc.git
-      3) Setup Redis (if using Sidekiq)
-      4) Review your README.md file for needed updates
-      5) Review your Gemfile for formatting
-      6) If you ran the install command with webpack=react, you also need to run: rake webpacker:install:react
+
+      1) Setup Postgres, Redis
+      2) Configure Sentry
+      3) Review your README.md file for needed updates
     MSG
 
     say msg, :magenta
@@ -154,26 +150,24 @@ def output_final_instructions
 end
 
 def setup_sidekiq
-  gem "sidekiq"
-
   after_bundle do
     insert_into_file "config/application.rb",
       "    config.active_job.queue_adapter = :sidekiq\n\n",
       after: "class Application < Rails::Application\n"
 
-    append_file "Procfile", <<~PROCFILE
-      worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} jemalloc.sh bundle exec sidekiq -t 25 -q default -q mailers
-    PROCFILE
+    ["Procfile", "Procfile.dev"].each do |file|
+      append_file file, <<~PROCFILE
+        worker: RAILS_MAX_THREADS=${SIDEKIQ_CONCURRENCY:-25} bundle exec sidekiq -t 25 -q default -q mailers -q active_storage_analysis -q active_storage_purge
+      PROCFILE
+    rescue
+      puts "File not found, skipping: #{file}"
+    end
 
-    git_proxy_commit "Setup Sidekiq"
+    git_commit_all "Setup Sidekiq"
   end
 end
 
 def setup_linters
-  gem_group :development, :test do
-    gem "standard"
-  end
-
   after_bundle do
     create_file ".eslintrc.json", <<~ESLINTRC
       {
@@ -191,14 +185,14 @@ def setup_linters
     insert_into_file "package.json", pkg_txt, before: "\n  \"dependencies\": {"
 
     # https://www.npmjs.com/package/eslint-config-react-app
-    run "yarn add --dev eslint eslint-config-react-app @typescript-eslint/eslint-plugin@1.x @typescript-eslint/parser@1.x babel-eslint@10.x eslint@6.x eslint-plugin-flowtype@3.x eslint-plugin-import@2.x eslint-plugin-jsx-a11y@6.x eslint-plugin-react@7.x eslint-plugin-react-hooks@1.x"
+    run "yarn add --dev eslint eslint-config-react-app eslint@^8.0.0"
 
-    git_proxy_commit "Setup styleguide and linters"
+    git_commit_all "Setup styleguide and linters"
   end
 
   after_bundle do
     bundle_command "exec standardrb --fix"
-    git_proxy_commit "automatically format code with standard"
+    git_commit_all "Automatically format code with standard"
   end
 end
 
@@ -206,56 +200,29 @@ def setup_commit_hooks
   create_file "lefthook.yml", <<~YML
     # Lefthook - git hook management
     # https://github.com/Arkweid/lefthook
-    #
-    # this runs your file through standard and eslint, automatically fixing what it
-    # can in a pre-commit. feel free to change it (e.g. pre-push instead of pre-commit),
-    # or to use local overrides to customize or disable it.
-    #
-    # example task running prettier.io:
-    #
-    # pre-commit:
-    #   commands:
-    #     prettier:
-    #       glob: "*.{js,css,scss,json,md}"
-    #       run: yarn prettier --write {staged_files} && git add {staged_files}
-    #
-    # to override or turn off pre-commit hooks, add a lefthook-local.yml
-    #
-    # pre-commit:
-    #   commands:
-    #     standardrb:
-    #       skip: true
-    #     eslint:
-    #       skip: true
-    #
-    # more info:
-    # https://github.com/Arkweid/lefthook#local-config
     pre-commit:
-      parallel: true
+      parallel: false
       commands:
         standardrb:
           glob: "{*.rb,*.rake,Gemfile}"
-          run: bin/bundle exec standardrb {staged_files} --safe-auto-correct && git add {staged_files}
+          run: bundle exec standardrb {staged_files} --safe-auto-correct && git add {staged_files}
         eslint:
-          glob: "*.js"
+          glob: "*.{js,jsx,ts,tsx}"
           run:
             yarn eslint {staged_files} --fix && git add {staged_files}
   YML
-
-  run "yarn add --dev @arkweid/lefthook"
-  run "yarn lefthook install"
 
   append_file ".gitignore", <<~GITIGNORE
     lefthook-local.yml
   GITIGNORE
 
-  git_proxy_commit "Install lefthook"
+  git_commit_all "Install lefthook"
 end
 
 def create_database
   after_bundle do
     bundle_command "exec rails db:create db:migrate"
-    git_proxy_commit "Create and migrate database"
+    git_commit_all "Create and migrate database"
   end
 end
 
@@ -287,23 +254,113 @@ def setup_sentry
     RB
   end
 
-  git_proxy_commit "Setup Sentry"
+  git_commit_all "Setup Sentry"
 end
 
 def setup_readme
   remove_file "README.md"
-  get "#{REPOSITORY_PATH}/templates/README.md", "README.md"
+  create_file "README.md", <<~README
+    # #{app_name}
 
-  git_proxy_commit "Add README"
+    ### Dependencies
+
+    - ruby, bundler
+    - node, yarn
+    - postgresql
+    - redis
+    - chromedriver `brew cask install chromedriver`
+
+    ### Setup
+
+    ```bash
+    bin/setup
+    bundle exec lefthook install
+    ```
+
+    ### Tests
+
+    ```bash
+    bundle exec rspec
+    ```
+
+    ### Deployment Information
+
+    _TODO_
+
+    ### Sidekiq
+
+    Please follow [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), especially making jobs idempotent and transactional.
+
+    ### Email
+
+    _TODO_
+
+    ### Coding Style
+
+    This projects uses RuboCop and ESLint to catch errors and keep style consistent.
+
+    It also uses [lefthook][lh] to manage git hooks. Use `git commit --no-verify` to skip checks, or see [./lefthook.yml](./lefthook.yml) for info on how to change its setup.
+
+    [lh]: https://github.com/Arkweid/lefthook
+
+
+    ### Important rake tasks
+
+    _TODO_
+
+    ### Scheduled tasks
+
+    _TODO_
+
+    ### Important ENV variables
+
+    Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to load `.env` files. Use `.env.development` and `.env.test` to setup _shared_ ENV variables for development and test, and use `.env` files ending in `.local` for variables specific to you.
+
+    Configuring Servers:
+
+    ```
+    WEB_CONCURRENCY - Number of Puma workers
+    RAILS_MAX_THREADS - Number of threads per Puma worker
+    SIDEKIQ_CONCURRENCY - Number of Sidekiq workers
+    ```
+
+    [rack-timeout][rt]:
+
+    ```
+    RACK_TIMEOUT_SERVICE_TIMEOUT
+    RACK_TIMEOUT_WAIT_TIMEOUT
+    RACK_TIMEOUT_WAIT_OVERTIME
+    RACK_TIMEOUT_SERVICE_PAST_WAIT
+    ```
+
+    [rt]: https://github.com/sharpstone/rack-timeout#configuring
+
+    This project was bootstrapped with the [tanooki-rails-template](https://github.com/TanookiLabs/tanooki-rails-template).
+    Issue reports and PRs welcome!
+  README
+
+  git_commit_all "Add README"
 end
 
 def setup_testing
   after_bundle do
     bundle_command "exec rails generate rspec:install"
     run "bundle binstubs rspec-core"
-    git_proxy_commit "RSpec install"
+    git_commit_all "RSpec install"
 
-    create_file "spec/support/chromedriver.rb", <<~RB
+    create_file "spec/support/sidekiq.rb", <<~RB
+      # https://github.com/mperham/sidekiq/wiki/Testing
+      require "sidekiq/testing"
+      Sidekiq.logger.level = Logger::ERROR
+
+      RSpec.configure do |config|
+        config.before(:each) do
+          Sidekiq::Worker.clear_all
+        end
+      end
+    RB
+
+    create_file "spec/support/capybara.rb", <<~RB
       require "selenium/webdriver"
 
       Capybara.register_driver :chrome do |app|
@@ -311,22 +368,20 @@ def setup_testing
       end
 
       Capybara.register_driver :headless_chrome do |app|
-        capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(
-          chromeOptions: { args: %w[headless disable-gpu] }
-        )
+        options = ::Selenium::WebDriver::Chrome::Options.new
+        options.headless!
+        options.add_argument "--window-size=1680,1050"
 
-        Capybara::Selenium::Driver.new(
-          app,
+        Capybara::Selenium::Driver.new app,
           browser: :chrome,
-          desired_capabilities: capabilities
-        )
+          options: options
       end
 
-      Capybara.javascript_driver = :headless_chrome
+      Capybara.javascript_driver = ENV.fetch("CAPYBARA_DRIVER", "headless_chrome").to_sym
+      Capybara.default_driver = ENV.fetch("CAPYBARA_DRIVER", "headless_chrome").to_sym
     RB
 
     create_file "spec/lint_spec.rb", <<~RB
-      # consider switching to rake task in the future: https://github.com/thoughtbot/factory_bot/blob/master/GETTING_STARTED.md#linting-factories
       require "rails_helper"
       RSpec.describe "Factories" do
         it "lints successfully" do
@@ -335,12 +390,25 @@ def setup_testing
       end
     RB
 
+    # generate(:controller, "example", "index")
+    # route "root to: 'example#index'"
+    # create_file "spec/features/example_spec.rb", <<~RB
+    #   require "rails_helper"
+    #
+    #   RSpec.describe "example", type: :feature do
+    #     it "works" do
+    #       visit "/"
+    #       expect(page).to have_content("Find me in")
+    #     end
+    #   end
+    # RB
+
     uncomment_lines "spec/rails_helper.rb", /Dir\[Rails\.root\.join/
+    comment_lines "spec/rails_helper.rb", "config.fixture_path ="
 
     gsub_file "spec/spec_helper.rb", "=begin\n", ""
     gsub_file "spec/spec_helper.rb", "=end\n", ""
-
-    comment_lines "spec/rails_helper.rb", "config.fixture_path ="
+    comment_lines "spec/spec_helper.rb", "config.profile_examples ="
 
     insert_into_file "spec/rails_helper.rb",
       "  config.include FactoryBot::Syntax::Methods\n\n",
@@ -350,7 +418,7 @@ def setup_testing
       "require \"capybara/rails\"\n",
       after: "Add additional requires below this line. Rails is not loaded until this point!\n"
 
-    git_proxy_commit "Finish setting up testing"
+    git_commit_all "Finish setting up testing"
   end
 end
 
@@ -369,7 +437,7 @@ def main_config_files
   uncomment_lines "config/puma.rb", /preload_app!$/
 
   create_file "Procfile", <<~PROCFILE
-    web: jemalloc.sh bundle exec puma -C config/puma.rb
+    web: bundle exec puma -C config/puma.rb
     release: bundle exec rake db:migrate
   PROCFILE
 
@@ -402,57 +470,23 @@ def main_config_files
   create_file ".env"
   create_file ".env.sample"
 
-  git_proxy_commit "Setup config files"
-end
-
-def heroku_ci_file
-  create_file "app.json", <<~APPJSON
-    {
-      "environments": {
-        "test": {
-          "addons": ["heroku-redis:hobby-dev", "heroku-postgresql:in-dyno"],
-          "env": {
-            "RAILS_ENV": "test",
-            "DISABLE_SPRING": "true",
-            "CAPYBARA_WAIT_TIME": "10"
-          },
-          "scripts": {
-            "test-setup": "bundle exec rails assets:precompile",
-            "test": "bundle exec rspec -f RspecTap::Formatter"
-          },
-          "formation": {
-            "test": {
-              "quantity": 1
-            }
-          },
-          "buildpacks": [
-            { "url": "heroku/nodejs" },
-            { "url": "heroku/ruby" },
-            { "url": "https://github.com/heroku/heroku-buildpack-google-chrome" },
-            { "url": "https://github.com/heroku/heroku-buildpack-chromedriver" }
-          ]
-        }
-      }
-    }
-  APPJSON
+  git_commit_all "Setup config files"
 end
 
 def assert_minimum_rails_and_ruby_version!
   requirement = Gem::Requirement.new(RAILS_REQUIREMENT)
   rails_version = Gem::Version.new(Rails::VERSION::STRING)
-  return if requirement.satisfied_by?(rails_version)
 
-  prompt = "This template requires Rails #{RAILS_REQUIREMENT}. "\
-           "You are using #{rails_version}. Continue anyway?"
-  exit 1 if no?(prompt)
+  unless requirement.satisfied_by?(rails_version)
+    raise "This template requires Rails #{RAILS_REQUIREMENT}. You are using #{rails_version}"
+  end
 
   requirement = Gem::Requirement.new(RUBY_REQUIREMENT)
   ruby_version = Gem::Version.new(RUBY_VERSION)
-  return if requirement.satisfied_by?(ruby_version)
 
-  prompt = "This template requires Ruby #{RUBY_REQUIREMENT}. "\
-           "You are using #{ruby_version}. Continue anyway?"
-  exit 1 if no?(prompt)
+  unless requirement.satisfied_by?(ruby_version)
+    raise "This template requires Ruby #{RUBY_REQUIREMENT}. You are using #{ruby_version}. Continue anyway?"
+  end
 end
 
 def setup_generators
@@ -480,18 +514,15 @@ def setup_generators
     end
   EOF
 
-  git_proxy_commit "Configured generators (UUIDs, less files)"
+  git_commit_all "Configured generators (UUIDs, less files)"
 end
 
 def setup_html_emails
-  gem "inky-rb", require: "inky"
-  gem "premailer-rails"
-  gem "sass"
-  run "yarn add https://github.com/TanookiLabs/foundation-emails.git"
+  run "yarn add foundation-emails"
 
   [".env", ".env.sample"].each do |env_file|
     append_file env_file, <<~ENV
-      ASSET_HOST=http://localhost:5100
+      ASSET_HOST=http://localhost:3000
     ENV
   end
 
@@ -506,10 +537,11 @@ def setup_html_emails
   RB
 
   append_file "config/initializers/assets.rb", <<~RB
-    Rails.application.config.assets.precompile += %w(email.css)
+    Rails.application.config.assets.paths << Rails.root.join("node_modules")
+    Rails.application.config.assets.precompile += %w[email.css]
   RB
 
-  remove_file "app/views/layouts/mailer.html.haml"
+  remove_file "app/views/layouts/mailer.html.erb"
   create_file "app/views/layouts/mailer.html.inky", <<~HAML
     !!! Strict
     %html{:xmlns => "http://www.w3.org/1999/xhtml"}
@@ -529,16 +561,21 @@ def setup_html_emails
                       = yield
   HAML
 
-  create_file "app/assets/stylesheets/email.scss", <<~CSS
-    // variable references:
-    // https://github.com/TanookiLabs/foundation-emails/blob/develop/scss/settings/_settings.scss
-    // https://github.com/TanookiLabs/foundation-emails/blob/develop/scss/components/_typography.scss
-
-    // FYI: this is from node_modules, not bundler
-    @import "foundation-emails/scss/foundation-emails";
+  create_file "app/assets/stylesheets/email.css", <<~CSS
+    /**
+     * include foundation-emails (in node_modules)
+     *= require "foundation-emails/dist/foundation-emails"
+     */
   CSS
 
-  git_proxy_commit "Setup html emails"
+  remove_file "app/assets/stylesheets/application.css"
+  create_file "app/assets/stylesheets/application.css", <<~CSS
+    /*
+     *= require_self
+     */
+  CSS
+
+  git_commit_all "Setup html emails"
 end
 
 # unclear why this is needed, but `heroku local` fails without it
@@ -555,7 +592,83 @@ def generate_tmp_dirs
     !/tmp/pids/.keep
   GITIGNORE
 
-  git_proxy_commit "Add empty tmp/pids directory"
+  git_commit_all "Add empty tmp/pids directory"
+end
+
+def setup_ci
+  create_file ".github/workflows/rails.yml", <<~GH_ACTIONS
+    name: rails
+    on: push
+    jobs:
+      standard:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v2
+          - name: Set up Ruby
+            uses: ruby/setup-ruby@v1
+            with:
+              bundler-cache: true
+          - run: bundle exec standardrb
+
+      rspec:
+        runs-on: ubuntu-latest
+        services:
+          postgres:
+            image: postgres
+            env:
+              POSTGRES_USER: postgres
+              POSTGRES_PASSWORD: password
+            ports: ["5432:5432"]
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+
+          chrome:
+            image: selenium/standalone-chrome:latest
+            volumes:
+              - /dev/shm:/dev/shm
+
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v2
+
+          - name: Set up Ruby
+            uses: ruby/setup-ruby@v1
+            with:
+              bundler-cache: true
+
+          - uses: actions/setup-node@v2
+            with:
+              cache: "yarn"
+
+          - name: Setup test database
+            env:
+              RAILS_ENV: test
+              DATABASE_URL: "postgres://postgres:password@localhost:5432/#{app_name}_test"
+            run: |
+              bin/rails db:create
+              bin/rails db:migrate
+
+          - name: Compile assets
+            env:
+              RAILS_ENV: test
+            run: |
+              yarn install
+              bin/rails assets:precompile
+
+          - name: Run tests
+            env:
+              RAILS_ENV: test
+              DATABASE_URL: "postgres://postgres:password@localhost:5432/#{app_name}_test"
+            run: bundle exec rspec
+  GH_ACTIONS
+
+  inside app_name do
+    run "bundle lock --add-platform x86_64-linux"
+  end
 end
 
 run_template!

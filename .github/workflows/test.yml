@@ -1,0 +1,48 @@
+name: test
+on:
+  push: {}
+  schedule:
+    - cron: "0 0 * * 0" # weekly
+jobs:
+  standard:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [3.1]
+        rails: [7.0.3.1]
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+      - name: Setup git
+        run: git config --global user.email "test@example.com" && git config --global user.name "Alice Tester"
+      - name: Install rails
+        run: gem install rails -v ${{ matrix.rails }}
+      - run: ruby test/test_rails_new.rb
+        env:
+          DATABASE_URL: "postgres://postgres:password@localhost:5432/testum_development"
+      - uses: actions/upload-artifact@v3
+        with:
+          name: example-rails-app
+          path: |
+            tmp/testum
+            !tmp/testum/node_modules
+            !tmp/testum/tmp
+            !tmp/testum/.git
+

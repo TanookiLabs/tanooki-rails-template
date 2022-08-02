@@ -1,10 +1,9 @@
 require "test/unit"
-require 'open3'
+require "open3"
 
 class TestGettingStarted < Test::Unit::TestCase
   def setup
     puts "installing rails"
-    assert(system("gem install rails -v 6.0.0.rc2 --no-document"), "install rails")
     assert(system("mkdir -p tmp"), "create tmp directory")
 
     puts "which: #{`which rails`}"
@@ -13,9 +12,21 @@ class TestGettingStarted < Test::Unit::TestCase
 
   def test_build_succeeds
     Dir.chdir("tmp") {
-      assert(system("rm -rf ./Foobar"), "existing rails app is removed")
+      assert(system("rm -rf ./testum"), "existing rails app is removed")
 
-      cmd = "../test/rails_new"
+      cmd = <<~CMD
+        rails new testum \
+              --database=postgresql \
+              --javascript=esbuild \
+              --skip-test \
+              --skip-action-cable \
+              --skip-hotwire \
+              --skip-action-mailbox \
+              --skip-action-text \
+              --skip-hotwire \
+              --skip-jbuilder \
+              --template='../rails-kickoff-template.rb'
+      CMD
 
       puts "running:"
       puts "$ #{cmd} (#{`pwd`.strip})"
@@ -27,13 +38,13 @@ class TestGettingStarted < Test::Unit::TestCase
   end
 
   def test_specs_pass
-    Dir.chdir("tmp/Foobar") {
+    Dir.chdir("tmp/testum") {
       assert(system("bundle exec rspec spec"), "tests pass")
     }
   end
 
   def test_rails_console
-    Dir.chdir("tmp/Foobar") {
+    Dir.chdir("tmp/testum") {
       assert(system("echo 'puts \"hello!\"' | bundle exec rails c"), "rails console works")
     }
   end
