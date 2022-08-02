@@ -4,7 +4,6 @@ require "open3"
 class TestGettingStarted < Test::Unit::TestCase
   def setup
     puts "installing rails"
-    assert(system("gem install rails -v 7.0.3.1 --no-document"), "install rails")
     assert(system("mkdir -p tmp"), "create tmp directory")
 
     puts "which: #{`which rails`}"
