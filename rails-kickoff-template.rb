@@ -445,14 +445,14 @@ def assert_minimum_rails_and_ruby_version!
   rails_version = Gem::Version.new(Rails::VERSION::STRING)
 
   unless requirement.satisfied_by?(rails_version)
-    exit 1 if no?("This template requires Rails #{RAILS_REQUIREMENT}. You are using #{rails_version}. Continue anyway?")
+    raise "This template requires Rails #{RAILS_REQUIREMENT}. You are using #{rails_version}"
   end
 
   requirement = Gem::Requirement.new(RUBY_REQUIREMENT)
   ruby_version = Gem::Version.new(RUBY_VERSION)
 
   unless requirement.satisfied_by?(ruby_version)
-    exit 1 if no?("This template requires Ruby #{RUBY_REQUIREMENT}. You are using #{ruby_version}. Continue anyway?")
+    raise "This template requires Ruby #{RUBY_REQUIREMENT}. You are using #{ruby_version}. Continue anyway?"
   end
 end
 
