@@ -6,6 +6,7 @@ jobs:
     strategy:
       matrix:
         ruby: [2.7, 3.1]
+        rails: [7.0.3.1]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -14,4 +15,6 @@ jobs:
         with:
           bundler-cache: true
           ruby-version: ${{ matrix.ruby }}
+      - name: Install rails
+        run: gem install rails ${{ matrix.rails }}
       - run: ruby test/test_rails_new.rb
