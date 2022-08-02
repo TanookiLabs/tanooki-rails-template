@@ -20,8 +20,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        env:
-          DATABASE_URL: "postgres://postgres:password@localhost:5432/testum_development"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -34,3 +32,5 @@ jobs:
       - name: Install rails
         run: gem install rails -v ${{ matrix.rails }}
       - run: ruby test/test_rails_new.rb
+        env:
+          DATABASE_URL: "postgres://postgres:password@localhost:5432/testum_development"
