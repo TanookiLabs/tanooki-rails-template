@@ -4,6 +4,7 @@ jobs:
   standard:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         ruby: [2.7, 3.1]
         rails: [7.0.3.1]
@@ -16,5 +17,5 @@ jobs:
           bundler-cache: true
           ruby-version: ${{ matrix.ruby }}
       - name: Install rails
-        run: gem install rails ${{ matrix.rails }}
+        run: gem install rails -v ${{ matrix.rails }}
       - run: ruby test/test_rails_new.rb
