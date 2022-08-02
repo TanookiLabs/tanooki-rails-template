@@ -124,12 +124,17 @@ def output_final_instructions
 
       Please review the above output for issues.
 
+      At this point, make sure `bin/dev` spins up your rails app and consider adding
+
+      - authentication: https://github.com/heartcombo/devise
+      - authorization: https://github.com/palkan/action_policy
+      - api: https://github.com/rmosolgo/graphql-ruby
+
       To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
 
-      1) Configure Sentry
-      3) Setup Redis (if using Sidekiq)
-      4) Review your README.md file for needed updates
-      5) Review your Gemfile for formatting
+      1) Setup Postgres, Redis
+      2) Configure Sentry
+      3) Review your README.md file for needed updates
     MSG
 
     say msg, :magenta
