@@ -530,10 +530,11 @@ def setup_html_emails
   RB
 
   append_file "config/initializers/assets.rb", <<~RB
-    Rails.application.config.assets.precompile += %w(email.css)
+    Rails.application.config.assets.paths << Rails.root.join("node_modules")
+    Rails.application.config.assets.precompile += %w[email.css]
   RB
 
-  remove_file "app/views/layouts/mailer.html.haml"
+  remove_file "app/views/layouts/mailer.html.erb"
   create_file "app/views/layouts/mailer.html.inky", <<~HAML
     !!! Strict
     %html{:xmlns => "http://www.w3.org/1999/xhtml"}
@@ -554,7 +555,10 @@ def setup_html_emails
   HAML
 
   create_file "app/assets/stylesheets/email.css", <<~CSS
-    @import "foundation-emails/dist/foundation-emails.css"; /* this is in node_modules */
+    /**
+     * include foundation-emails (in node_modules)
+     *= require "foundation-emails/dist/foundation-emails"
+     */
   CSS
 
   remove_file "app/assets/stylesheets/application.css"
