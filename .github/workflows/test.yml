@@ -40,4 +40,10 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: example-rails-app
-          path: tmp/testum
+          path:
+          path: |
+            tmp/testum
+            !tmp/testum/node_modules
+            !tmp/testum/tmp
+            !tmp/testum/.git
+
