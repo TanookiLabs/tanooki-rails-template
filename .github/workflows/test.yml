@@ -6,8 +6,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [2.7, 3.1]
+        ruby: [3.1, head]
         rails: [7.0.3.1]
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        env:
+          DATABASE_URL: "postgres://postgres:password@localhost:5432/testum_development"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
