@@ -359,23 +359,19 @@ def setup_readme
 
     ## Production
 
-    [Production](https://dashboard.heroku.com/apps/TODO) can be
-    [deployed manually through Heroku's interface](https://dashboard.heroku.com/apps/TODO/deploy/github),
-    or [deployed manually with Git](https://devcenter.heroku.com/articles/git):
+    [Production](https://dashboard.heroku.com/apps/!TODO) should be promoted from
+    staging using Heroku's pipelines. This can be done [from the Heroku 
+    dashboard](https://dashboard.heroku.com/pipelines/!TODO) or from the 
+    command line:
+    
+    ```sh
+    # review the diff of changes you're about to deploy
+    heroku pipelines:diff -r staging 
 
-    1. Add the appropriate git remotes for staging and/or production deployments:
-
-      ```sh
-      heroku git:remote -r staging -a !TODO-staging
-      heroku git:remote -r production -a !TODO-production
-      ```
-
-    2. Push your main branch to production:
-
-      ```sh
-      git push production main
-      ```
-
+    # deploy it
+    heroku pipelines:promote -r staging 
+    ````
+    
     ## jemalloc
 
     This project is served from Heroku. It uses jemalloc to more efficiently
@@ -389,15 +385,17 @@ def setup_readme
 
     ## Branch naming conventions
 
-    Branch names should follow the format: `<ticket_number>-<brief-description>`
+    Branch names should follow the format: `<brief-description>-<ticket_number>`
 
     ## Submitting a PR
 
     - Include the relevant Pivotal issue number(s), when applicable, using the following format:
 
         ```
-        Delivers [<ticket_number>](https://www.pivotaltracker.com/story/show/<ticket-number>) - <ticket_title> 
+        [Delivers <ticket_number>](https://www.pivotaltracker.com/story/show/<ticket-number>)
         ```
+
+    > Consider using [`stories`](https://github.com/schpet/stories) to automate this workflow.
 
     !TODO: Add additional guidance, for example: who should be added as reviewers; Any labels/tags needed;
 
