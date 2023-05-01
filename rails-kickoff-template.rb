@@ -259,10 +259,43 @@ end
 
 def setup_readme
   remove_file "README.md"
-  create_file "README.md", <<~README
+  readme = <<~README
     # #{app_name}
 
-    ### Dependencies
+    !TODO: Find/replace all instances of "!TODO" with appropriate 
+    project-specific values!
+
+    - [Project links](#project-links)
+    - [Getting Started](#getting-started)
+      - [Dependencies](#dependencies)
+      - [Setup](#setup)
+      - [Running Tests](#running-tests)
+      - [Important environment variables](#important-environment-variables)
+      - [Important rake tasks](#important-rake-tasks)
+      - [Scheduled tasks](#scheduled-tasks)
+    - [Deployments](#deployments)
+      - [Heroku Review Apps and Workflow](#review-apps-workflow)
+      - [Staging](#staging)
+      - [Production](#production)
+      - [jemalloc](#jemalloc)
+    - [Contributing](#contributing)
+      - [Branch naming conventions](#branch-naming-conventions)
+      - [Submitting a PR](#submitting-a-pr)
+      - [Sidekiq](#sidekiq)
+      - [Coding Style](#coding-style)
+      
+    # Project links
+
+    - [Production](!TODO)
+    - [Staging](!TODO)
+    - [Pivotal](!TODO)
+    - [Sentry](!TODO)
+    - [Heroku](!TODO)
+    - [Designs](!TODO)
+    
+    # Getting Started
+
+    ## Dependencies
 
     - ruby, bundler
     - node, yarn
@@ -270,51 +303,25 @@ def setup_readme
     - redis
     - chromedriver `brew cask install chromedriver`
 
-    ### Setup
+    ## Setup
 
     ```bash
     bin/setup
     bundle exec lefthook install
     ```
 
-    ### Tests
+    ## Running Tests
 
     ```bash
     bundle exec rspec
     ```
 
-    ### Deployment Information
+    ## Important environment variables
 
-    _TODO_
-
-    ### Sidekiq
-
-    Please follow [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), especially making jobs idempotent and transactional.
-
-    ### Email
-
-    _TODO_
-
-    ### Coding Style
-
-    This projects uses RuboCop and ESLint to catch errors and keep style consistent.
-
-    It also uses [lefthook][lh] to manage git hooks. Use `git commit --no-verify` to skip checks, or see [./lefthook.yml](./lefthook.yml) for info on how to change its setup.
-
-    [lh]: https://github.com/Arkweid/lefthook
-
-
-    ### Important rake tasks
-
-    _TODO_
-
-    ### Scheduled tasks
-
-    _TODO_
-
-    ### Important ENV variables
-
-    Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to load `.env` files. Use `.env.development` and `.env.test` to setup _shared_ ENV variables for development and test, and use `.env` files ending in `.local` for variables specific to you.
+    Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to 
+    load `.env` files. Use `.env.development` and `.env.test` to setup _shared_ 
+    ENV variables for development and test, and use `.env` files ending in 
+    `.local` for variables specific to you.
 
     Configuring Servers:
 
@@ -335,9 +342,84 @@ def setup_readme
 
     [rt]: https://github.com/sharpstone/rack-timeout#configuring
 
+    ### Important rake tasks
+
+    !TODO: Document important rake taskss
+
+    ### Scheduled tasks
+
+    !TODO: Document any scheduled tasks
+
+    # Deployments
+        
+    ## Staging
+
+    [Staging](https://dashboard.heroku.com/apps/!TODO) is automatically 
+    deployed from the `main` branch.
+
+    ## Production
+
+    [Production](https://dashboard.heroku.com/apps/!TODO) should be promoted from
+    staging using Heroku's pipelines. This can be done [from the Heroku 
+    dashboard](https://dashboard.heroku.com/pipelines/!TODO) or from the 
+    command line:
+    
+    ```sh
+    # review the diff of changes you're about to deploy
+    heroku pipelines:diff -r staging 
+
+    # deploy it
+    heroku pipelines:promote -r staging 
+    ````
+    
+    ## jemalloc
+
+    This project is served from Heroku. It uses jemalloc to more efficiently
+    allocate memory. You must run the following to setup jemalloc:
+
+    ```bash
+    heroku buildpacks:add --index 1 https://github.com/mojodna/heroku-buildpack-jemalloc.git
+    ```
+
+    # Contributing
+
+    ## Branch naming conventions
+
+    Branch names should follow the format: `<brief-description>-<ticket_number>`
+
+    ## Submitting a PR
+
+    - Include the relevant Pivotal issue number(s), when applicable, using the following format:
+
+        ```
+        [Delivers <ticket_number>](https://www.pivotaltracker.com/story/show/<ticket-number>)
+        ```
+
+    > Consider using [`stories`](https://github.com/schpet/stories) to automate this workflow.
+
+    !TODO: Add additional guidance, for example: who should be added as reviewers; Any labels/tags needed;
+
+    ## Coding Style
+
+    This projects uses RuboCop and ESLint to catch errors and keep style consistent.
+
+    It also uses [lefthook][lh] to manage git hooks. Use `git commit --no-verify` 
+    to skip checks, or see [./lefthook.yml](./lefthook.yml) for info on how to 
+    change its setup.
+
+    [lh]: https://github.com/Arkweid/lefthook
+
+    ### Sidekiq
+
+    Please follow [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), 
+    especially making jobs idempotent and transactional.
+
+
     This project was bootstrapped with the [tanooki-rails-template](https://github.com/TanookiLabs/tanooki-rails-template).
     Issue reports and PRs welcome!
-  README
+    README
+
+  create_file "README.md", readme
 
   git_commit_all "Add README"
 end
