@@ -30,7 +30,6 @@ def run_template!
   main_config_files
 
   setup_testing
-  setup_haml
   setup_sentry
   setup_environments
 
@@ -55,11 +54,11 @@ end
 def ignore_files
   append_file ".gitignore", <<~GITIGNORE
     node_modules
+    vendor/bundle
   GITIGNORE
 end
 
 def add_gems
-  gem "haml-rails"
   gem "sentry-ruby"
   gem "sentry-rails"
   gem "sentry-sidekiq"
@@ -91,13 +90,6 @@ def add_gems
   end
 
   git_commit_all "Add standard tanooki depencies"
-end
-
-def setup_haml
-  after_bundle do
-    run "yes | HAML_RAILS_DELETE_ERB=true rake haml:erb2haml"
-    git_commit_all "Use Haml"
-  end
 end
 
 def setup_environments
