@@ -254,7 +254,7 @@ def setup_readme
   readme = <<~README
     # #{app_name}
 
-    !TODO: Find/replace all instances of "!TODO" with appropriate 
+    !TODO: Find/replace all instances of "!TODO" with appropriate
     project-specific values!
 
     - [Project links](#project-links)
@@ -275,7 +275,7 @@ def setup_readme
       - [Submitting a PR](#submitting-a-pr)
       - [Sidekiq](#sidekiq)
       - [Coding Style](#coding-style)
-      
+
     # Project links
 
     - [Production](!TODO)
@@ -284,7 +284,7 @@ def setup_readme
     - [Sentry](!TODO)
     - [Heroku](!TODO)
     - [Designs](!TODO)
-    
+
     # Getting Started
 
     ## Dependencies
@@ -310,9 +310,9 @@ def setup_readme
 
     ## Important environment variables
 
-    Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to 
-    load `.env` files. Use `.env.development` and `.env.test` to setup _shared_ 
-    ENV variables for development and test, and use `.env` files ending in 
+    Note that this project uses [dotenv](https://github.com/bkeepers/dotenv) to
+    load `.env` files. Use `.env.development` and `.env.test` to setup _shared_
+    ENV variables for development and test, and use `.env` files ending in
     `.local` for variables specific to you.
 
     Configuring Servers:
@@ -343,27 +343,27 @@ def setup_readme
     !TODO: Document any scheduled tasks
 
     # Deployments
-        
+
     ## Staging
 
-    [Staging](https://dashboard.heroku.com/apps/!TODO) is automatically 
+    [Staging](https://dashboard.heroku.com/apps/!TODO) is automatically
     deployed from the `main` branch.
 
     ## Production
 
     [Production](https://dashboard.heroku.com/apps/!TODO) should be promoted from
-    staging using Heroku's pipelines. This can be done [from the Heroku 
-    dashboard](https://dashboard.heroku.com/pipelines/!TODO) or from the 
+    staging using Heroku's pipelines. This can be done [from the Heroku
+    dashboard](https://dashboard.heroku.com/pipelines/!TODO) or from the
     command line:
-    
+
     ```sh
     # review the diff of changes you're about to deploy
-    heroku pipelines:diff -r staging 
+    heroku pipelines:diff -r staging
 
     # deploy it
-    heroku pipelines:promote -r staging 
+    heroku pipelines:promote -r staging
     ````
-    
+
     ## jemalloc
 
     This project is served from Heroku. It uses jemalloc to more efficiently
@@ -395,15 +395,15 @@ def setup_readme
 
     This projects uses RuboCop and ESLint to catch errors and keep style consistent.
 
-    It also uses [lefthook][lh] to manage git hooks. Use `git commit --no-verify` 
-    to skip checks, or see [./lefthook.yml](./lefthook.yml) for info on how to 
+    It also uses [lefthook][lh] to manage git hooks. Use `git commit --no-verify`
+    to skip checks, or see [./lefthook.yml](./lefthook.yml) for info on how to
     change its setup.
 
     [lh]: https://github.com/Arkweid/lefthook
 
     ### Sidekiq
 
-    Please follow [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices), 
+    Please follow [Sidekiq Best Practices](https://github.com/mperham/sidekiq/wiki/Best-Practices),
     especially making jobs idempotent and transactional.
 
 
@@ -594,7 +594,7 @@ end
 def setup_html_emails
   run "yarn add foundation-emails"
 
-  [".env", ".env.sample"].each do |env_file|
+  [".env", ".env.development"].each do |env_file|
     append_file env_file, <<~ENV
       ASSET_HOST=http://localhost:3000
     ENV

@@ -24,12 +24,10 @@ This repository holds the Rails application template referred to in our
          --javascript=esbuild \
          --skip-test \
          --skip-action-cable \
-         --skip-hotwire \
          --skip-action-mailbox \
          --skip-action-text \
-         --skip-hotwire \
          --skip-jbuilder \
-         --template=https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master/rails-kickoff-template.rb
+         --template=https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master/template.rb
    ```
 
 - [ ] Clean up Gemfile
