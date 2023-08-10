@@ -107,6 +107,16 @@ def add_vite
   inject_into_file("vite.config.ts", "\n    FullReload(['config/routes.rb', 'app/views/**/*']),", after: "plugins: [")
   # inject_into_file("vite.config.ts", "import StimulusHMR from 'vite-plugin-stimulus-hmr'\n", after: "from 'vite'\n")
   # inject_into_file("vite.config.ts", "\n    StimulusHMR(),", after: "plugins: [")
+
+  # replaces the line
+  #   <%= vite_javascript_tag 'application' %>
+  # with
+  #   <%= vite_typescript_tag 'application' %>
+  # in app/views/layouts/application.html.erb
+  gsub_file("app/views/layouts/application.html.erb", /vite_javascript_tag/, "vite_typescript_tag")
+
+  # moves app/frontend/entrypoints/application.js to app/frontend/entrypoints/application.ts
+  run("mv app/frontend/entrypoints/application.js app/frontend/entrypoints/application.ts")
 end
 
 def add_javascript
