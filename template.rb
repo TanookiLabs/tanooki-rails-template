@@ -110,13 +110,7 @@ def add_vite
   run("bundle exec vite install")
   inject_into_file("vite.config.ts", "import FullReload from 'vite-plugin-full-reload'\n", after: "from 'vite'\n")
   inject_into_file("vite.config.ts", "\n    FullReload(['config/routes.rb', 'app/views/**/*']),", after: "plugins: [")
-  # inject_into_file("vite.config.ts", "import StimulusHMR from 'vite-plugin-stimulus-hmr'\n", after: "from 'vite'\n")
-  # inject_into_file("vite.config.ts", "\n    StimulusHMR(),", after: "plugins: [")
 
-  # replaces the line
-  #   <%= vite_javascript_tag 'application' %>
-  # with
-  #   <%= vite_typescript_tag 'application' %>
   # in app/views/layouts/application.html.erb
   gsub_file("app/views/layouts/application.html.erb", /vite_javascript_tag/, "vite_typescript_tag")
   gsub_file("app/views/layouts/application.html.erb", /stylesheet_link_tag/, "vite_stylesheet_tag")
@@ -141,13 +135,14 @@ def setup_environments
 
   git_commit_all("Configure letter opener in development")
 
+  # use RAILS_ENV=production / production.rb on both staging and production
+  remove_file("config/environments/staging.rb")
+
   # gsub_file(
   #   "config/environments/production.rb",
   #   /config\.log_level = :debug/,
   #   'config.log_level = ENV.fetch("LOG_LEVEL", "info").to_sym'
   # )
-
-  # git_commit_all "Make :info the default log_level in production"
 
   ["development", "test"].each do |env|
     inject_into_file("config/environments/#{env}.rb", before: /^end\n/) do
