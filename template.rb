@@ -118,11 +118,20 @@ def add_vite
   # moves app/frontend/entrypoints/application.js to app/frontend/entrypoints/application.ts
   run("mv app/frontend/entrypoints/application.js app/frontend/entrypoints/application.ts")
 
-  create_file("app/frontend/entrypoints/application.css")
+  remove_file("app/assets/stylesheets/application.css")
+  create_file(
+    "app/frontend/entrypoints/application.css",
+    <<~CSS
+      @import "tailwindcss/base";
+      @import "tailwindcss/components";
+      @import "tailwindcss/utilities";
+    CSS
+  )
 end
 
 def add_tailwind
   run("yarn tailwindcss init --postcss --full")
+  gsub_file("tailwind.config.js", /content: \[\],/, "content: ['./app/helpers/**/*.rb', './app/javascript/**/*.js', './app/views/**/*', './app/components/**/*', './app/views/**/*'],")
 end
 
 def setup_environments
@@ -749,16 +758,6 @@ def setup_html_emails
       /**
        * include foundation-emails (in node_modules)
        *= require "foundation-emails/dist/foundation-emails"
-       */
-    CSS
-  )
-
-  remove_file("app/assets/stylesheets/application.css")
-  create_file(
-    "app/assets/stylesheets/application.css",
-    <<~CSS
-      /*
-       *= require_self
        */
     CSS
   )
