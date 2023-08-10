@@ -104,6 +104,21 @@ end
 
 def add_javascript
   run("yarn add sass vite-plugin-full-reload typescript tailwindcss postcss autoprefixer")
+  run("yarn add --dev @tsconfig/vite-react")
+  create_file(
+    "tsconfig.json",
+    <<~JSON
+      {
+        "extends": "@tsconfig/vite-react/tsconfig.json",
+        "compilerOptions": {
+          "baseUrl": ".",
+          "paths": {
+            "~/*": ["app/frontend/*"]
+          }
+        }
+      }
+    JSON
+  )
 end
 
 def add_vite
@@ -131,7 +146,11 @@ end
 
 def add_tailwind
   run("yarn tailwindcss init --postcss --full")
-  gsub_file("tailwind.config.js", /content: \[\],/, "content: ['./app/helpers/**/*.rb', './app/javascript/**/*.js', './app/views/**/*', './app/components/**/*', './app/views/**/*'],")
+  gsub_file(
+    "tailwind.config.js",
+    /content: \[\],/,
+    "content: ['./app/helpers/**/*.rb', './app/javascript/**/*.js', './app/views/**/*', './app/components/**/*', './app/views/**/*'],"
+  )
 end
 
 def setup_environments
@@ -174,6 +193,7 @@ def output_final_instructions
       - authentication: https://github.com/heartcombo/devise
       - authorization: https://github.com/palkan/action_policy
       - api: https://github.com/rmosolgo/graphql-ruby
+      - react: example of the setup involved here https://gist.github.com/schpet/b3c27b268a6255b9c82a61e6cf0e424b
 
       To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
 
@@ -842,7 +862,7 @@ def setup_ci
                 DATABASE_URL: "postgres://postgres:password@localhost:5432/#{app_name}_test"
               run: |
                 bin/rails db:create
-                bin/rails db:migrate
+                bin/rails db:schema:load
 
             - name: Compile assets
               env:
