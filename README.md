@@ -21,15 +21,13 @@ This repository holds the Rails application template referred to in our
    rails --version 
    rails new example-project-name \
          --database=postgresql \
-         --javascript=esbuild \
+         --skip-javascript \
          --skip-test \
          --skip-action-cable \
-         --skip-hotwire \
          --skip-action-mailbox \
          --skip-action-text \
-         --skip-hotwire \
          --skip-jbuilder \
-         --template=https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master/rails-kickoff-template.rb
+         --template=https://raw.githubusercontent.com/TanookiLabs/tanooki-rails-template/master/template.rb
    ```
 
 - [ ] Clean up Gemfile

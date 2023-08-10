@@ -25,7 +25,7 @@ class TestGettingStarted < Test::Unit::TestCase
               --skip-action-text \
               --skip-hotwire \
               --skip-jbuilder \
-              --template='../rails-kickoff-template.rb'
+              --template='../template.rb'
       CMD
 
       puts "running:"
