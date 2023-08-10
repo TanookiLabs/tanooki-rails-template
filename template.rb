@@ -194,6 +194,7 @@ def output_final_instructions
       - authorization: https://github.com/palkan/action_policy
       - api: https://github.com/rmosolgo/graphql-ruby
       - react: example of the setup involved here https://gist.github.com/schpet/b3c27b268a6255b9c82a61e6cf0e424b
+      - components: https://viewcomponent.org/
 
       To finish setup, you must prepare Heroku with at minimum the following steps (review the developer guide for further details)
 
