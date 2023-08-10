@@ -47,6 +47,7 @@ def run_template!
 
   after_bundle do
     add_vite
+    add_tailwind
     git_commit_all("Commit after bundle")
 
     output_final_instructions
@@ -101,6 +102,10 @@ def add_gems
   git_commit_all("Add standard tanooki depencies")
 end
 
+def add_javascript
+  run("yarn add sass vite-plugin-full-reload typescript tailwindcss postcss autoprefixer")
+end
+
 def add_vite
   run("bundle exec vite install")
   inject_into_file("vite.config.ts", "import FullReload from 'vite-plugin-full-reload'\n", after: "from 'vite'\n")
@@ -114,13 +119,16 @@ def add_vite
   #   <%= vite_typescript_tag 'application' %>
   # in app/views/layouts/application.html.erb
   gsub_file("app/views/layouts/application.html.erb", /vite_javascript_tag/, "vite_typescript_tag")
+  gsub_file("app/views/layouts/application.html.erb", /stylesheet_link_tag/, "vite_stylesheet_tag")
 
   # moves app/frontend/entrypoints/application.js to app/frontend/entrypoints/application.ts
   run("mv app/frontend/entrypoints/application.js app/frontend/entrypoints/application.ts")
+
+  create_file("app/frontend/entrypoints/application.css")
 end
 
-def add_javascript
-  run("yarn add sass vite-plugin-full-reload typescript")
+def add_tailwind
+  run("yarn tailwindcss init --postcss --full")
 end
 
 def setup_environments
