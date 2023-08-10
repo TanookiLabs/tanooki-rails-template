@@ -20,14 +20,10 @@ def run_template!
 
   git_commit_all("Initial commit")
 
-  after_bundle do
-    git_commit_all("Commit after bundle")
-  end
-
   setup_sidekiq
 
   add_gems
-  add_vite
+  add_javascript
   main_config_files
 
   setup_testing
@@ -49,7 +45,12 @@ def run_template!
 
   generate_tmp_dirs
 
-  output_final_instructions
+  after_bundle do
+    add_vite
+    git_commit_all("Commit after bundle")
+
+    output_final_instructions
+  end
 end
 
 def ignore_files
@@ -103,9 +104,13 @@ end
 def add_vite
   run("bundle exec vite install")
   inject_into_file("vite.config.ts", "import FullReload from 'vite-plugin-full-reload'\n", after: "from 'vite'\n")
-  inject_into_file("vite.config.ts", "import StimulusHMR from 'vite-plugin-stimulus-hmr'\n", after: "from 'vite'\n")
   inject_into_file("vite.config.ts", "\n    FullReload(['config/routes.rb', 'app/views/**/*']),", after: "plugins: [")
-  inject_into_file("vite.config.ts", "\n    StimulusHMR(),", after: "plugins: [")
+  # inject_into_file("vite.config.ts", "import StimulusHMR from 'vite-plugin-stimulus-hmr'\n", after: "from 'vite'\n")
+  # inject_into_file("vite.config.ts", "\n    StimulusHMR(),", after: "plugins: [")
+end
+
+def add_javascript
+  run("yarn add sass vite-plugin-full-reload typescript")
 end
 
 def setup_environments
@@ -562,9 +567,26 @@ def main_config_files
     "Procfile",
     <<~PROCFILE
       web: bundle exec puma -C config/puma.rb
+      worker: sidekiq
       release: bundle exec rake db:migrate
     PROCFILE
   )
+
+  create_file(
+    "bin/dev",
+    <<~BASH
+      #!/usr/bin/env bash
+
+      if ! command -v foreman &> /dev/null
+      then
+        echo "Installing foreman..."
+        gem install foreman
+      fi
+
+      foreman start -f Procfile.dev "$@"
+    BASH
+  )
+  run("chmod +x bin/dev")
 
   create_file(
     ".editorconfig",
@@ -654,14 +676,12 @@ end
 def setup_html_emails
   run("yarn add foundation-emails")
 
-  [".env", ".env.development"].each do |env_file|
-    append_file(
-      env_file,
-      <<~ENV
-        ASSET_HOST=http://localhost:3000
-      ENV
-    )
-  end
+  create_file(
+    ".env.development",
+    <<~ENV
+      ASSET_HOST=http://localhost:3000
+    ENV
+  )
 
   initializer(
     "inky.rb",
