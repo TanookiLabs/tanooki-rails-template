@@ -21,7 +21,7 @@ This repository holds the Rails application template referred to in our
    rails --version 
    rails new example-project-name \
          --database=postgresql \
-         --javascript=esbuild \
+         --skip-javascript \
          --skip-test \
          --skip-action-cable \
          --skip-action-mailbox \
