@@ -23,7 +23,6 @@ This repository holds the Rails application template referred to in our
          --database=postgresql \
          --skip-javascript \
          --skip-test \
-         --skip-action-cable \
          --skip-action-mailbox \
          --skip-action-text \
          --skip-jbuilder \
