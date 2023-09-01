@@ -20,12 +20,13 @@ def run_template!
 
   git_commit_all("Initial commit")
 
-  setup_sidekiq
-
   add_gems
+  add_vite
   add_javascript
+  add_tailwind
   main_config_files
 
+  setup_sidekiq
   setup_testing
   setup_sentry
   setup_environments
@@ -46,12 +47,10 @@ def run_template!
   generate_tmp_dirs
 
   after_bundle do
-    add_vite
-    add_tailwind
     git_commit_all("Commit after bundle")
-
-    output_final_instructions
   end
+
+  output_final_instructions
 end
 
 def ignore_files
@@ -102,55 +101,63 @@ def add_gems
   git_commit_all("Add standard tanooki depencies")
 end
 
-def add_javascript
-  run("yarn add sass vite-plugin-full-reload typescript tailwindcss postcss autoprefixer")
-  run("yarn add --dev @tsconfig/vite-react")
-  create_file(
-    "tsconfig.json",
-    <<~JSON
-      {
-        "extends": "@tsconfig/vite-react/tsconfig.json",
-        "compilerOptions": {
-          "baseUrl": ".",
-          "paths": {
-            "~/*": ["app/frontend/*"]
+def add_vite
+  after_bundle do
+    run("bundle exec vite install")
+
+    run("yarn add --dev @tsconfig/vite-react")
+    create_file(
+      "tsconfig.json",
+      <<~JSON
+        {
+          "extends": "@tsconfig/vite-react/tsconfig.json",
+          "compilerOptions": {
+            "baseUrl": ".",
+            "paths": {
+              "~/*": ["app/frontend/*"]
+            }
           }
         }
-      }
-    JSON
-  )
+      JSON
+    )
+
+    inject_into_file("vite.config.ts", "import FullReload from 'vite-plugin-full-reload'\n", after: "from 'vite'\n")
+    inject_into_file("vite.config.ts", "\n    FullReload(['config/routes.rb', 'app/views/**/*']),", after: "plugins: [")
+
+    # in app/views/layouts/application.html.erb
+    gsub_file("app/views/layouts/application.html.erb", /vite_javascript_tag/, "vite_typescript_tag")
+    gsub_file("app/views/layouts/application.html.erb", /stylesheet_link_tag/, "vite_stylesheet_tag")
+
+    # moves app/frontend/entrypoints/application.js to app/frontend/entrypoints/application.ts
+    run("mv app/frontend/entrypoints/application.js app/frontend/entrypoints/application.ts")
+
+    remove_file("app/assets/stylesheets/application.css")
+    create_file(
+      "app/frontend/entrypoints/application.css",
+      <<~CSS
+        @import "tailwindcss/base";
+        @import "tailwindcss/components";
+        @import "tailwindcss/utilities";
+      CSS
+    )
+  end
 end
 
-def add_vite
-  run("bundle exec vite install")
-  inject_into_file("vite.config.ts", "import FullReload from 'vite-plugin-full-reload'\n", after: "from 'vite'\n")
-  inject_into_file("vite.config.ts", "\n    FullReload(['config/routes.rb', 'app/views/**/*']),", after: "plugins: [")
-
-  # in app/views/layouts/application.html.erb
-  gsub_file("app/views/layouts/application.html.erb", /vite_javascript_tag/, "vite_typescript_tag")
-  gsub_file("app/views/layouts/application.html.erb", /stylesheet_link_tag/, "vite_stylesheet_tag")
-
-  # moves app/frontend/entrypoints/application.js to app/frontend/entrypoints/application.ts
-  run("mv app/frontend/entrypoints/application.js app/frontend/entrypoints/application.ts")
-
-  remove_file("app/assets/stylesheets/application.css")
-  create_file(
-    "app/frontend/entrypoints/application.css",
-    <<~CSS
-      @import "tailwindcss/base";
-      @import "tailwindcss/components";
-      @import "tailwindcss/utilities";
-    CSS
-  )
+def add_javascript
+  after_bundle do
+    run("yarn add sass vite-plugin-full-reload typescript tailwindcss postcss autoprefixer")
+  end
 end
 
 def add_tailwind
-  run("yarn tailwindcss init --postcss --full")
-  gsub_file(
-    "tailwind.config.js",
-    /content: \[\],/,
-    "content: ['./app/helpers/**/*.rb', './app/javascript/**/*.js', './app/views/**/*', './app/components/**/*', './app/views/**/*'],"
-  )
+  after_bundle do
+    run("yarn tailwindcss init --postcss --full")
+    gsub_file(
+      "tailwind.config.js",
+      /content: \[\],/,
+      "content: ['./app/helpers/**/*.rb', './app/javascript/**/*.js', './app/views/**/*', './app/components/**/*', './app/views/**/*'],"
+    )
+  end
 end
 
 def setup_environments
