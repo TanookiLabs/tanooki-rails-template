@@ -46,10 +46,6 @@ def run_template!
 
   generate_tmp_dirs
 
-  after_bundle do
-    git_commit_all("Commit after bundle")
-  end
-
   output_final_instructions
 end
 
